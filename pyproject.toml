@@ -1,0 +1,39 @@
+[tool.yapf]
+based_on_style = 'google'
+
+[tool.yapfignore]
+ignore_patterns = ['build/']
+
+[tool.isort]
+profile = 'google'
+
+[tool.pylint.MASTER]
+load-plugins = ['pylint.extensions.mccabe']
+
+[tool.pylint.messages_control]
+enable = [
+    'F',
+    'E',
+    'anomalous-backslash-in-string',
+    'bad-format-string',
+    'bad-open-mode',
+    'binary-op-exception',
+    'duplicate-key',
+    'global-variable-not-assigned',
+    'unnecessary-semicolon',
+    'unreachable',
+]
+disable = [
+    'c-extension-no-member',
+    'fixme',
+    'import-error',
+    'invalid-name',
+    'missing-class-docstring',
+    'missing-function-docstring',
+    'missing-module-docstring',
+    'redefined-outer-name',
+    'superfluous-parens',
+    'too-few-public-methods',
+    'too-many-arguments',
+    'wrong-import-order',
+]
