@@ -14,24 +14,33 @@ def cli(debug):
 
 
 @cli.command()
-@click.option('--size', '-s', default=2000, show_default=True)
+@click.option('--size',
+              '-s',
+              default=2000,
+              show_default=True,
+              help=('Pixel size of smallest fitting dimension. '
+                    '`0` for original size.'))
 @click.option('--resize-filter', '-f', default='Mitchell', show_default=True)
-@click.option('--ext', '-e', show_default=True)
+@click.option('--ext', '-e', show_default=True, help='Output image extension.')
 @click.option('--prefix-original',
               '-o',
               'prefix',
               flag_value='original',
               default=True,
-              help='[ORIGINAL] prefix when dst is not set [default]')
+              help='`[ORIGINAL]` prefix when dst is not set. [default]')
 @click.option('--prefix-resized',
               '-r',
               'prefix',
               flag_value='resized',
-              help='[RESIZED] prefix when dst is not set')
-@click.option('--batch/--no-batch', default=True, show_default=True)
+              help='`[RESIZED]` prefix when dst is not set.')
+@click.option('--batch/--no-batch',
+              default=True,
+              show_default=True,
+              help='Resize multiple directories.')
 @click.option('--capture/--no-capture',
               default=True,
-              help='Capture ImageMagick output')
+              show_default=True,
+              help='Capture ImageMagick output.')
 @click.argument('src', type=click.Path(exists=True, file_okay=False))
 @click.argument('dst', required=False)
 def resize(size, ext, resize_filter, prefix, batch, capture, src, dst):
@@ -55,10 +64,13 @@ def size(viz, path):
 
 
 @cli.command()
-@click.option('--shutdown/--no-shutdown', help='Shutdown after robocopy')
+@click.option('--shutdown/--no-shutdown',
+              show_default=True,
+              help='Shutdown after robocopy.')
 @click.option('--mirror/--no-mirror',
+              show_default=True,
               help=('Deletes destination files and directories '
-                    'that no longer exist in the source'))
+                    'that no longer exist in the source.'))
 @click.argument('src', type=click.Path(exists=True, file_okay=False))
 @click.argument('dst', type=click.Path(exists=True, file_okay=False))
 def copy(shutdown, mirror, src, dst):

@@ -48,6 +48,9 @@ class _ImageMagicResizer:
     def resize(self, src: Path, dst: Path, size, capture=True):
         raise NotImplementedError
 
+    def _find_images(self, path: Path):
+        return _find_files(path=path, exts=self.IMG_EXTS)
+
 
 class ConvertResizer(_ImageMagicResizer):
 
@@ -72,9 +75,10 @@ class ConvertResizer(_ImageMagicResizer):
         return sp.run(args, capture_output=capture, check=False)
 
     def resize(self, src: Path, dst: Path, size, capture=True):
-        images = sorted(_find_files(path=src, exts=self.IMG_EXTS))
+        images = sorted(self._find_images(src))
         if not images:
             logger.warning('No images in "{}"', src)
+            return
 
         ss, ds = 0.0, 0.0
         for image in track(images, console=console, transient=True):
@@ -124,13 +128,16 @@ class MogrifyResizer(_ImageMagicResizer):
                                  size=size)
         logger.debug(args)
 
+        images_count = sum(1 for _ in self._find_images(src))
+        if not images_count:
+            logger.warning('No images in "{}"', src)
+            return
+
         if not capture:
             sp.run(args=args, check=False)
         else:
-            files_count = sum(
-                1 for _ in _find_files(path=src, exts=self.IMG_EXTS))
             for line in track(sequence=self._mogrify(args),
-                              total=files_count,
+                              total=images_count,
                               console=console,
                               transient=True):
                 logger.debug(line)
@@ -160,7 +167,9 @@ def resize(src,
     else:
         subdirs = [src]
 
-    if isinstance(size, int):
+    if size == 0:
+        size = '100%'
+    elif isinstance(size, int):
         size = f'{size}x{size}'
 
     Resizer = MogrifyResizer if mogrify else ConvertResizer
