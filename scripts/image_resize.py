@@ -17,16 +17,17 @@ def _find_image_magick() -> Path:
         raise OSError('ImageMagick을 찾을 수 없음')
 
     if len(lst) > 1:
-        logger.warning(
-            '다수의 ImageMagick 경로가 발견됨 {}',
-            [x.as_posix() for x in lst],
-        )
+        logger.warning('다수의 ImageMagick 경로가 발견됨 {}', list(map(str, lst)))
 
     return lst[-1].joinpath('magick.exe')
 
 
 def _find_files(path: Path, exts):
     return (x for x in path.iterdir() if x.suffix in exts)
+
+
+def _log_size(src: int, dst: int):
+    logger.info('{} -> {} ({:.1%})', fss(src), fss(dst), dst / src)
 
 
 class _ImageMagicResizer:
@@ -84,7 +85,7 @@ class ConvertResizer(_ImageMagicResizer):
             logger.warning('No images in "{}"', src)
             return
 
-        ss, ds = 0.0, 0.0
+        ss, ds = 0, 0
         for image in track(images, console=console, transient=True):
             resized = dst.joinpath(image.name)
             if self._format:
@@ -100,7 +101,7 @@ class ConvertResizer(_ImageMagicResizer):
             ss += image.stat().st_size
             ds += resized.stat().st_size
 
-        logger.info('{} -> {} ({:.1f}%)', fss(ss), fss(ds), (100.0 * ds / ss))
+        _log_size(src=ss, dst=ds)
 
 
 class MogrifyResizer(_ImageMagicResizer):
@@ -151,7 +152,7 @@ class MogrifyResizer(_ImageMagicResizer):
 
         ss = sum(x.stat().st_size for x in src.glob('*'))
         ds = sum(x.stat().st_size for x in dst.glob('*'))
-        logger.info('{} -> {} ({:.1f}%)', fss(ss), fss(ds), (100 * ds / ss))
+        _log_size(src=ss, dst=ds)
 
 
 def _resize(src: Path, dst: Path, subdir: Path, resizer: _ImageMagicResizer,
