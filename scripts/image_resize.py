@@ -36,7 +36,8 @@ class _ImageMagicResizer:
                  path: Optional[StrPath] = None,
                  ext: Optional[str] = None,
                  resize_filter='Mitchell',
-                 shrink_only=True) -> None:
+                 shrink_only=True,
+                 option: Optional[str] = None) -> None:
         if path is None:
             path = _find_image_magick()
 
@@ -44,6 +45,7 @@ class _ImageMagicResizer:
         self._filter = resize_filter
         self._shrink = '^>' if shrink_only else ''
         self._format = ext
+        self._option = option or ''
 
     def resize(self, src: Path, dst: Path, size, capture=True):
         raise NotImplementedError
@@ -58,14 +60,16 @@ class ConvertResizer(_ImageMagicResizer):
                  path: Optional[StrPath] = None,
                  ext: Optional[str] = None,
                  resize_filter='Mitchell',
-                 shrink_only=True) -> None:
+                 shrink_only=True,
+                 option: Optional[str] = None) -> None:
         super().__init__(path=path,
                          ext=ext,
                          resize_filter=resize_filter,
-                         shrink_only=shrink_only)
+                         shrink_only=shrink_only,
+                         option=option)
 
         self._args = (f'{self._im} convert -resize {{size}}{self._shrink} '
-                      f'-filter {self._filter} "{{src}}" "{{dst}}"')
+                      f'-filter {self._filter} {option} "{{src}}" "{{dst}}"')
 
     def _convert(self, src: Path, dst: Path, size, capture=True):
         args = self._args.format(src=src.as_posix(),
@@ -105,15 +109,18 @@ class MogrifyResizer(_ImageMagicResizer):
                  path: Optional[StrPath] = None,
                  ext: Optional[str] = None,
                  resize_filter='Mitchell',
-                 shrink_only=True) -> None:
+                 shrink_only=True,
+                 option: Optional[str] = None) -> None:
         super().__init__(path=path,
                          ext=ext,
                          resize_filter=resize_filter,
-                         shrink_only=shrink_only)
+                         shrink_only=shrink_only,
+                         option=option)
 
         fmt = '' if ext is None else f'-format {ext}'
         self._args = (f'{self._im} mogrify -verbose {fmt} '
-                      f'-resize {{size}}{self._shrink} -filter {self._filter} '
+                      f'-resize {{size}}{self._shrink} '
+                      f'-filter {self._filter} {option} '
                       f'-path "{{dst}}" "{{src}}/*"')
 
     @staticmethod
@@ -147,15 +154,36 @@ class MogrifyResizer(_ImageMagicResizer):
         logger.info('{} -> {} ({:.1f}%)', fss(ss), fss(ds), (100 * ds / ss))
 
 
-def resize(src,
-           dst=None,
+def _resize(src: Path, dst: Path, subdir: Path, resizer: _ImageMagicResizer,
+            size: str, prefix_original: bool, capture: bool):
+    if src != dst:
+        s = subdir
+        d = dst.joinpath(subdir.name)
+    elif prefix_original:
+        s = src.joinpath(f'[ORIGINAL]{subdir.name}')
+        d = dst.joinpath(subdir.name)
+        subdir.rename(s)
+    else:
+        if subdir.name.startswith('[RESIZED]'):
+            return
+
+        s = subdir
+        d = dst.joinpath(f'[RESIZED]{subdir.name}')
+
+    logger.info('Target: "{}"', subdir.name)
+    d.mkdir(exist_ok=True)
+    resizer.resize(src=s, dst=d, size=size, capture=capture)
+
+
+def resize(src: StrPath,
+           dst: Optional[StrPath] = None,
            size: Union[int, str] = 2000,
-           ext=None,
+           ext: Optional[str] = None,
            resize_filter='Mitchell',
+           option: Optional[str] = None,
            batch=True,
            capture=True,
-           prefix_original=True,
-           mogrify=True):
+           prefix_original=True):
     if not batch and dst is None:
         raise ValueError('batch 모드가 아닌 경우 dst를 지정해야 합니다.')
 
@@ -172,29 +200,20 @@ def resize(src,
     elif isinstance(size, int):
         size = f'{size}x{size}'
 
-    Resizer = MogrifyResizer if mogrify else ConvertResizer
-    resizer = Resizer(ext=ext, resize_filter=resize_filter)
+    resizer = MogrifyResizer(ext=ext,
+                             resize_filter=resize_filter,
+                             option=option)
 
     logger.info('SRC: "{}"', src)
     logger.info('DST: "{}"', dst)
-    logger.info('Output size: "{}" | ext: "{}" | filter: "{}"', size, ext,
-                resize_filter)
+    logger.info('Output size: "{}" | ext: "{}" | filter: "{}" | option: "{}"',
+                size, ext, resize_filter, option)
 
     for subdir in subdirs:
-        if src != dst:
-            s = subdir
-            d = dst.joinpath(subdir.name)
-        elif prefix_original:
-            s = src.joinpath(f'[ORIGINAL]{subdir.name}')
-            d = dst.joinpath(subdir.name)
-            subdir.rename(s)
-        else:
-            if subdir.name.startswith('[RESIZED]'):
-                continue
-
-            s = subdir
-            d = dst.joinpath(f'[RESIZED]{subdir.name}')
-
-        logger.info('Target: "{}"', subdir.name)
-        d.mkdir(exist_ok=True)
-        resizer.resize(src=s, dst=d, size=size, capture=capture)
+        _resize(src=src,
+                dst=dst,
+                subdir=subdir,
+                resizer=resizer,
+                size=size,
+                prefix_original=prefix_original,
+                capture=capture)

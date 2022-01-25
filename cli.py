@@ -20,8 +20,9 @@ def cli(debug):
               show_default=True,
               help=('Pixel size of smallest fitting dimension. '
                     '`0` for original size.'))
-@click.option('--resize-filter', '-f', default='Mitchell', show_default=True)
 @click.option('--ext', '-e', show_default=True, help='Output image extension.')
+@click.option('--resize-filter', '-f', default='Mitchell', show_default=True)
+@click.option('--option', type=str, help='Additional options')
 @click.option('--prefix-original',
               '-o',
               'prefix',
@@ -43,17 +44,17 @@ def cli(debug):
               help='Capture ImageMagick output.')
 @click.argument('src', type=click.Path(exists=True, file_okay=False))
 @click.argument('dst', required=False)
-def resize(size, ext, resize_filter, prefix, batch, capture, src, dst):
+def resize(size, ext, resize_filter, option, prefix, batch, capture, src, dst):
     """batch resize images/comics"""
     _resize(src=src,
             dst=dst,
             size=size,
             ext=ext,
             resize_filter=resize_filter,
+            option=option,
             batch=batch,
             capture=capture,
-            prefix_original=(prefix == 'original'),
-            mogrify=True)
+            prefix_original=(prefix == 'original'))
 
 
 @cli.command()
