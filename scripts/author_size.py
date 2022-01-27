@@ -64,24 +64,36 @@ def find_file(path) -> Path:
     if path is None or path.is_dir():
         path = find_wiztree_file(path)
 
+    path.stat()
+
     return path
 
 
-def _viz_and_save(df: pd.DataFrame, path, viz_style='bar'):
+def _visualize(df: pd.DataFrame, path, subset='SizeMB', viz_style='bar'):
+    df_vis = df.sort_values(by=subset, ascending=False)
+
     if viz_style == 'bar':
-        viz = df.style.bar(subset='SizeMB')
+        viz = df_vis.style.bar(subset=subset)
     elif viz_style == 'gradient':
-        viz = df.style.background_gradient(subset='SizeMB')
+        viz = df_vis.style.background_gradient(subset=subset)
     else:
         raise ValueError(f'{viz_style} not in ("bar", "gradient")')
 
     viz.to_html(path)
 
 
-def author_size(path, viz):
+def _author_size(df: pd.DataFrame):
+    file_size: pd.DataFrame = (
+        df.groupby('author')['SizeMB'].sum().round(2).to_frame())
+    count: pd.DataFrame = df.groupby('author').size().to_frame(name='Count')
+
+    return file_size.join(count)
+
+
+def author_size(path, viz, drop_na=True):
     # 대상 파일 찾기
     path = find_file(path)
-    path.stat()
+    root = path.parent
     logger.info(f'File: "{path.as_posix()}"')
 
     # 파읽 불러오기
@@ -94,18 +106,21 @@ def author_size(path, viz):
     # 개별 파일 크기별로 정리
     logger.info('Files by size')
     print('\n', df.head(10))
-    _viz_and_save(df=df, path='Size-Book.html', viz_style=viz)
+    _visualize(df=df,
+               path=root.joinpath('Comics-Book-Size.html'),
+               viz_style=viz)
 
-    # 작가 크기별로 정리
-    df_author: pd.DataFrame = (
-        df.groupby('author')['SizeMB'].sum().round(2).to_frame())
+    # 작가 크기/개수별 정리
+    df_author = _author_size(
+        df=(df.loc[df['author'] != 'N／A'] if drop_na else df))
     df_author.sort_values(by='SizeMB', inplace=True, ascending=False)
 
     print('\n', df_author.head(10))
-    _viz_and_save(df=df_author, path='Size-Author.html', viz_style=viz)
-
-    # 작가 NA 제외 크기별 정리
-    df_wona: pd.DataFrame = (df.loc[df['author'] != 'N／A'].groupby('author')
-                             ['SizeMB'].sum().round(2).to_frame())
-    df_wona.sort_values(by='SizeMB', inplace=True, ascending=False)
-    _viz_and_save(df=df_wona, path='Size-Author-withoutNA.html', viz_style=viz)
+    _visualize(df=df_author,
+               path=root.joinpath('Comics-Author-Size.html'),
+               subset='SizeMB',
+               viz_style=viz)
+    _visualize(df=df_author,
+               path=root.joinpath('Comics-Author-Count.html'),
+               subset='Count',
+               viz_style=viz)

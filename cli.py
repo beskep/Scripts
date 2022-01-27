@@ -58,10 +58,14 @@ def resize(size, ext, resize_filter, option, prefix, batch, capture, src, dst):
 
 
 @cli.command()
-@click.option('--viz', default='bar', type=click.Choice(['bar', 'gradient']))
+@click.option('--viz',
+              default='bar',
+              show_default=True,
+              type=click.Choice(['bar', 'gradient']))
+@click.option('--na/--no-na', show_default=True, help='Drop N/A')
 @click.argument('path', required=False)
-def size(viz, path):
-    _size(path=path, viz=viz)
+def size(viz, na, path):
+    _size(path=path, viz=viz, drop_na=(not na))
 
 
 @cli.command()
