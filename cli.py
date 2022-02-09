@@ -4,13 +4,17 @@ from loguru import logger
 from scripts.author_size import author_size as _size
 from scripts.copy_shutdown import copy_shutdown as _copy
 from scripts.image_resize import resize as _resize
+from scripts.remove_duplicate import remove_duplicate
 from scripts.utils import set_logger
+
+_dir = click.Path(exists=True, file_okay=False)
 
 
 @click.group()
 @click.option('--debug', '-d', is_flag=True)
-def cli(debug):
-    set_logger(level=(10 if debug else 20))
+@click.option('--loglevel', '-l', default=20)
+def cli(debug, loglevel):
+    set_logger(level=min((10 if debug else 20), loglevel))
 
 
 @cli.command()
@@ -42,7 +46,7 @@ def cli(debug):
               default=True,
               show_default=True,
               help='Capture ImageMagick output.')
-@click.argument('src', type=click.Path(exists=True, file_okay=False))
+@click.argument('src', type=_dir)
 @click.argument('dst', required=False)
 def resize(size, ext, resize_filter, option, prefix, batch, capture, src, dst):
     """batch resize images/comics"""
@@ -55,6 +59,20 @@ def resize(size, ext, resize_filter, option, prefix, batch, capture, src, dst):
             batch=batch,
             capture=capture,
             prefix_original=(prefix == 'original'))
+
+
+@cli.command()
+@click.option('--keep',
+              default='webp',
+              show_default=True,
+              help='Suffix of files to keep.')
+@click.option('--remove',
+              multiple=True,
+              help='Suffixes of duplicate files to remove.')
+@click.option('--batch/--no-batch', default=True, show_default=True)
+@click.argument('src', type=_dir)
+def duplicate(keep, remove, batch, src):
+    remove_duplicate(src=src, batch=batch, keep=keep, remove=remove)
 
 
 @cli.command()
@@ -76,8 +94,8 @@ def size(viz, na, path):
               show_default=True,
               help=('Deletes destination files and directories '
                     'that no longer exist in the source.'))
-@click.argument('src', type=click.Path(exists=True, file_okay=False))
-@click.argument('dst', type=click.Path(exists=True, file_okay=False))
+@click.argument('src', type=_dir)
+@click.argument('dst', type=_dir)
 def copy(shutdown, mirror, src, dst):
     """robocopy"""
     logger.info('shutdown: {}', shutdown)
