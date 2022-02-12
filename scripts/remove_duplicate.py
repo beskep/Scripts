@@ -34,7 +34,7 @@ class DuplicateCleaner:
         return path.suffix in self._remove
 
     def duplicate_files(self, keep: Path):
-        return (x for x in keep.parent.glob(f'{keep.stem}*')
+        return (x for x in keep.parent.glob(f'{keep.stem}.*')
                 if self._is_duplicate(x))
 
     def clean(self, root: Path):
@@ -42,10 +42,10 @@ class DuplicateCleaner:
             files = list(self.duplicate_files(keep))
 
             if files:
-                logger.info('Keep "{}"', keep)
+                logger.info('Keep "{}" | Remove {}', keep.name,
+                            ', '.join(f'"{x.suffix}"' for x in files))
 
             for file in files:
-                logger.debug('Remove "{}"', file)
                 file.unlink()
 
 
