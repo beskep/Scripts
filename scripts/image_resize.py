@@ -22,10 +22,6 @@ def _find_image_magick() -> Path:
     return lst[-1].joinpath('magick.exe')
 
 
-def _find_files(path: Path, exts):
-    return (x for x in path.iterdir() if x.suffix in exts)
-
-
 def _log_size(src: int, dst: int):
     logger.info('{} -> {} ({:.1%})', fss(src), fss(dst), dst / src)
 
@@ -52,7 +48,7 @@ class _ImageMagicResizer:
         raise NotImplementedError
 
     def _find_images(self, path: Path):
-        return _find_files(path=path, exts=self.IMG_EXTS)
+        return (x for x in path.iterdir() if x.suffix.lower() in self.IMG_EXTS)
 
 
 class ConvertResizer(_ImageMagicResizer):
