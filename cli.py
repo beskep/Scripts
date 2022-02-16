@@ -4,7 +4,7 @@ from loguru import logger
 from scripts.author_size import author_size as _size
 from scripts.copy_shutdown import copy_shutdown as _copy
 from scripts.image_resize import resize as _resize
-from scripts.remove_duplicate import remove_duplicate
+from scripts.remove_duplicate import remove_duplicate as _duplicate
 from scripts.utils import set_logger
 
 _dir = click.Path(exists=True, file_okay=False)
@@ -72,7 +72,7 @@ def resize(size, ext, resize_filter, option, prefix, batch, capture, src, dst):
 @click.option('--batch/--no-batch', default=True, show_default=True)
 @click.argument('src', type=_dir)
 def duplicate(keep, remove, batch, src):
-    remove_duplicate(src=src, batch=batch, keep=keep, remove=remove)
+    _duplicate(src=src, batch=batch, keep=keep, remove=remove)
 
 
 @cli.command()
@@ -94,16 +94,21 @@ def size(viz, na, path):
               show_default=True,
               help=('Deletes destination files and directories '
                     'that no longer exist in the source.'))
+@click.option('--fl/--nfl',
+              default=True,
+              show_default=True,
+              help='/nfl: Specifies that file names are not to be logged.')
 @click.argument('src', type=_dir)
 @click.argument('dst', type=_dir)
-def copy(shutdown, mirror, src, dst):
+def copy(shutdown, mirror, fl, src, dst):
     """robocopy"""
     logger.info('shutdown: {}', shutdown)
     logger.info('mirror: {}', mirror)
+    logger.info('fl: {}', fl)
 
     click.confirm('Continue?', abort=True)
 
-    _copy(src=src, dst=dst, shutdown=shutdown, mirror=mirror)
+    _copy(src=src, dst=dst, shutdown=shutdown, mirror=mirror, log_file_list=fl)
 
 
 if __name__ == '__main__':

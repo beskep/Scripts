@@ -19,7 +19,7 @@ class DuplicateCleaner:
                  keep='webp',
                  remove: Optional[Tuple[str]] = None) -> None:
         self._keep = _suffix(keep)
-        self._remove = tuple(_suffix(x) for x in remove) if remove else None
+        self._remove = tuple(_suffix(x) for x in remove) if remove else ()
 
     def files_to_keep(self, root: Path):
         return root.glob(f'*{self._keep}')
