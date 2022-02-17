@@ -28,7 +28,7 @@ class DuplicateCleaner:
         if path.suffix == self._keep:
             return False
 
-        if self._remove is None:
+        if not self._remove:
             return True
 
         return path.suffix in self._remove
