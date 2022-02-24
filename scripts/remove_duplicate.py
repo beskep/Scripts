@@ -28,10 +28,7 @@ class DuplicateCleaner:
         if path.suffix == self._keep:
             return False
 
-        if not self._remove:
-            return True
-
-        return path.suffix in self._remove
+        return not self._remove or path.suffix in self._remove
 
     def duplicate_files(self, keep: Path):
         return (x for x in keep.parent.glob(f'{keep.stem}.*')

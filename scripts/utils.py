@@ -40,7 +40,7 @@ def set_logger(level: Union[int, str] = 20):
 
 
 def file_size_string(size, suffix='B'):
-    for unit in ['', 'Ki', 'Mi', 'Gi', 'Ti', 'Pi', 'Ei', 'Zi']:
+    for unit in ['', 'K', 'M', 'G', 'T', 'P', 'E', 'Z']:
         if abs(size) < 1024.0:
             return f'{size:3.2f} {unit}{suffix}'
 

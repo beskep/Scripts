@@ -23,7 +23,8 @@ def _find_image_magick() -> Path:
 
 
 def _log_size(src: int, dst: int):
-    logger.info('{} -> {} ({:.1%})', fss(src), fss(dst), dst / src)
+    level = 'INFO' if dst <= src else 'WARNING'
+    logger.log(level, '{} -> {} ({:.1%})', fss(src), fss(dst), dst / src)
 
 
 class _ImageMagicResizer:

@@ -6,6 +6,8 @@ from typing import Optional
 from loguru import logger
 import pandas as pd
 
+from .utils import file_size_string as fss
+
 p_author = re.compile(r'^\[.*\((.*?)\)].*')
 
 
@@ -87,7 +89,11 @@ def _author_size(df: pd.DataFrame):
         df.groupby('author')['SizeMB'].sum().round(2).to_frame())
     count: pd.DataFrame = df.groupby('author').size().to_frame(name='Count')
 
-    return file_size.join(count)
+    file_size = file_size.join(count)
+    file_size['Size'] = [fss(x * 1e6) for x in file_size['SizeMB']]
+    file_size = file_size[['SizeMB', 'Size', 'Count']]
+
+    return file_size
 
 
 def author_size(path, viz, drop_na=True):
