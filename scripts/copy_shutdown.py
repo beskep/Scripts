@@ -14,20 +14,28 @@ def _prep(path) -> Path:
     return path
 
 
-def copy_shutdown(src, dst, shutdown: bool, mirror=False, log_file_list=True):
+def copy_shutdown(src,
+                  dst,
+                  run=True,
+                  shutdown=False,
+                  mirror=False,
+                  hidden=False,
+                  log_files=True):
     src = _prep(src)
     dst = _prep(dst)
 
     log = Path(__file__).parents[1].joinpath('copy.log').resolve()
 
     mir = '/MIR' if mirror else '/e'
-    nfl = '' if log_file_list else '/nfl'
-    args = (f'robocopy "{src}" "{dst}" {mir} /tee /np {nfl} '
+    nfl = '' if log_files else '/nfl'
+    xa = '/xa:st' + ('h' if hidden else '')
+    args = (f'robocopy "{src}" "{dst}" {mir} {xa} /tee /np {nfl} '
             f'/unicode /unilog:"{log}" /eta')
 
     logger.info(args)
-    sp.run(args, check=False)
+    if run:
+        sp.run(args, check=False)
 
     if shutdown:
         logger.info('shutdown')
-        sp.run('shutdown -s', check=False)
+        sp.run('shutdown -s -t 120', check=False)

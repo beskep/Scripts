@@ -87,6 +87,9 @@ def size(viz, na, path):
 
 
 @cli.command()
+@click.option('--run/--no-run',
+              show_default=True,
+              help='no-run: Do NOT run command and just log the arguments.')
 @click.option('--shutdown/--no-shutdown',
               show_default=True,
               help='Shutdown after robocopy.')
@@ -94,21 +97,32 @@ def size(viz, na, path):
               show_default=True,
               help=('Deletes destination files and directories '
                     'that no longer exist in the source.'))
+@click.option('--hidden/--no-hidden',
+              show_default=True,
+              help='no-run: Copy hidden files.')
 @click.option('--fl/--nfl',
               default=True,
               show_default=True,
               help='/nfl: Specifies that file names are not to be logged.')
 @click.argument('src', type=_dir)
 @click.argument('dst', type=_dir)
-def copy(shutdown, mirror, fl, src, dst):
+def copy(run, shutdown, mirror, hidden, fl, src, dst):
     """robocopy"""
+    logger.info('run: {}', run)
     logger.info('shutdown: {}', shutdown)
     logger.info('mirror: {}', mirror)
+    logger.info('hidden: {}', hidden)
     logger.info('fl: {}', fl)
 
     click.confirm('Continue?', abort=True)
 
-    _copy(src=src, dst=dst, shutdown=shutdown, mirror=mirror, log_file_list=fl)
+    _copy(src=src,
+          dst=dst,
+          run=run,
+          shutdown=shutdown,
+          mirror=mirror,
+          hidden=hidden,
+          log_files=fl)
 
 
 if __name__ == '__main__':
