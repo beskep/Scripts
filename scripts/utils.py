@@ -46,4 +46,4 @@ def file_size_string(size, suffix='B'):
 
         size /= 1024.0
 
-    return f'{size:.2f}Yi {suffix}'
+    return f'{size:.2f} Y{suffix}'

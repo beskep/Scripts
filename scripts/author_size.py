@@ -32,10 +32,11 @@ def read_wiztree(file):
     with open(file, 'r', encoding='utf-8') as f:
         for line in f:
             cols = line.replace('"', '').split(',')
-            if not cols[0].endswith('\\'):
+            p = Path(cols[0])
+
+            if not (p.is_dir() or p.suffix.lower() in ('.rar', '.zip')):
                 continue
 
-            p = Path(cols[0])
             if '_downloaded' in p.name:
                 continue
 
