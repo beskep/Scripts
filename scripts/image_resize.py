@@ -23,7 +23,7 @@ def _find_image_magick() -> Path:
 
 
 def _log_size(src: int, dst: int):
-    level = 'INFO' if dst <= src else 'WARNING'
+    level = 'INFO' if dst <= src * 0.9 else 'WARNING'
     logger.log(level, '{} -> {} ({:.1%})', fss(src), fss(dst), dst / src)
 
 
@@ -158,15 +158,15 @@ def _resize(src: Path, dst: Path, subdir: Path, resizer: _ImageMagicResizer,
         s = subdir
         d = dst.joinpath(subdir.name)
     elif prefix_original:
-        s = src.joinpath(f'[ORIGINAL]{subdir.name}')
+        s = src.joinpath(f'≪ORIGINAL≫{subdir.name}')
         d = dst.joinpath(subdir.name)
         subdir.rename(s)
     else:
-        if subdir.name.startswith('[RESIZED]'):
+        if subdir.name.startswith('≪RESIZED≫'):
             return
 
         s = subdir
-        d = dst.joinpath(f'[RESIZED]{subdir.name}')
+        d = dst.joinpath(f'≪RESIZED≫{subdir.name}')
 
     logger.info('Target: "{}"', subdir.name)
     d.mkdir(exist_ok=True)
