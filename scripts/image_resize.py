@@ -10,6 +10,18 @@ from .utils import file_size_string as fss
 from .utils import StrPath
 
 
+class ResizedDirectoryError(ValueError):
+    pass
+
+
+class NoImagesError(FileNotFoundError):
+
+    def __init__(self, path, message='No images in "{}"') -> None:
+        self.path = path
+        self.message = message.format(path)
+        super().__init__(self.message)
+
+
 def _find_image_magick() -> Path:
     lst = list(Path(r'C:\Program Files').glob('ImageMagick*'))
 
@@ -23,7 +35,13 @@ def _find_image_magick() -> Path:
 
 
 def _log_size(src: int, dst: int):
-    level = 'INFO' if dst <= src * 0.9 else 'WARNING'
+    if dst <= src * 0.9:
+        level = 'INFO'
+    elif dst < src:
+        level = 'WARNING'
+    else:
+        level = 'ERROR'
+
     logger.log(level, '{} -> {} ({:.1%})', fss(src), fss(dst), dst / src)
 
 
@@ -45,11 +63,12 @@ class _ImageMagicResizer:
         self._format = ext
         self._option = option or ''
 
-    def resize(self, src: Path, dst: Path, size, capture=True):
+    def resize(self, src: Path, dst: Path, size, capture=True) -> bool:
         raise NotImplementedError
 
-    def _find_images(self, path: Path):
-        return (x for x in path.iterdir() if x.suffix.lower() in self.IMG_EXTS)
+    @classmethod
+    def find_images(cls, path: Path):
+        return (x for x in path.iterdir() if x.suffix.lower() in cls.IMG_EXTS)
 
 
 class ConvertResizer(_ImageMagicResizer):
@@ -77,10 +96,9 @@ class ConvertResizer(_ImageMagicResizer):
         return sp.run(args, capture_output=capture, check=False)
 
     def resize(self, src: Path, dst: Path, size, capture=True):
-        images = sorted(self._find_images(src))
+        images = sorted(self.find_images(src))
         if not images:
-            logger.warning('No images in "{}"', src)
-            return
+            raise NoImagesError(src)
 
         ss, ds = 0, 0
         for image in track(images, console=console, transient=True):
@@ -99,6 +117,8 @@ class ConvertResizer(_ImageMagicResizer):
             ds += resized.stat().st_size
 
         _log_size(src=ss, dst=ds)
+
+        return ds < ss
 
 
 class MogrifyResizer(_ImageMagicResizer):
@@ -133,10 +153,9 @@ class MogrifyResizer(_ImageMagicResizer):
                                  size=size)
         logger.debug(args)
 
-        images_count = sum(1 for _ in self._find_images(src))
+        images_count = sum(1 for _ in self.find_images(src))
         if not images_count:
-            logger.warning('No images in "{}"', src)
-            return
+            raise NoImagesError(src)
 
         if not capture:
             sp.run(args=args, check=False)
@@ -151,9 +170,15 @@ class MogrifyResizer(_ImageMagicResizer):
         ds = sum(x.stat().st_size for x in dst.glob('*'))
         _log_size(src=ss, dst=ds)
 
+        return ds < ss
+
 
 def _resize(src: Path, dst: Path, subdir: Path, resizer: _ImageMagicResizer,
             size: str, prefix_original: bool, capture: bool):
+    logger.info('Target: "{}"', subdir.name)
+    if not any(True for _ in resizer.find_images(subdir)):
+        raise NoImagesError(subdir)
+
     if src != dst:
         s = subdir
         d = dst.joinpath(subdir.name)
@@ -163,14 +188,19 @@ def _resize(src: Path, dst: Path, subdir: Path, resizer: _ImageMagicResizer,
         subdir.rename(s)
     else:
         if subdir.name.startswith('≪RESIZED≫'):
-            return
+            logger.info('Pass resized directory')
+            raise ResizedDirectoryError
 
         s = subdir
         d = dst.joinpath(f'≪RESIZED≫{subdir.name}')
 
-    logger.info('Target: "{}"', subdir.name)
     d.mkdir(exist_ok=True)
-    resizer.resize(src=s, dst=d, size=size, capture=capture)
+
+    reduced = resizer.resize(src=s, dst=d, size=size, capture=capture)
+    if not reduced:
+        d.rename(d.parent.joinpath(f'≪NotReduced≫{d.name}'))
+
+    return reduced
 
 
 def resize(src: StrPath,
@@ -208,10 +238,18 @@ def resize(src: StrPath,
                 size, ext, resize_filter, option)
 
     for subdir in subdirs:
-        _resize(src=src,
-                dst=dst,
-                subdir=subdir,
-                resizer=resizer,
-                size=size,
-                prefix_original=prefix_original,
-                capture=capture)
+        try:
+            _resize(src=src,
+                    dst=dst,
+                    subdir=subdir,
+                    resizer=resizer,
+                    size=size,
+                    prefix_original=prefix_original,
+                    capture=capture)
+        except ResizedDirectoryError:
+            pass
+        except NoImagesError as e:
+            logger.warning(str(e))
+            continue
+        except (OSError, RuntimeError, ValueError) as e:
+            logger.catch(e, reraise=True)
