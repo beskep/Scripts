@@ -8,7 +8,7 @@ from rich.theme import Theme
 
 StrPath = Union[str, PathLike]
 console = Console(theme=Theme({'logging.level.success': 'blue'}))
-_handler = RichHandler(console=console, log_time_format='[%X]')
+_handler = RichHandler(console=console, markup=True, log_time_format='[%X]')
 _levels = {
     'TRACE': 5,
     'DEBUG': 10,
@@ -42,7 +42,7 @@ def set_logger(level: Union[int, str] = 20):
 def file_size_string(size, suffix='B'):
     for unit in ['', 'K', 'M', 'G', 'T', 'P', 'E', 'Z']:
         if abs(size) < 1024.0:
-            return f'{size:3.2f} {unit}{suffix}'
+            return f'{size:.2f} {unit}{suffix}'
 
         size /= 1024.0
 

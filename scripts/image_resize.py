@@ -1,6 +1,6 @@
 from pathlib import Path
 import subprocess as sp
-from typing import Iterable, Optional, Union
+from typing import Iterable, Optional
 
 from loguru import logger
 from rich.progress import track
@@ -26,7 +26,7 @@ def _find_image_magick() -> Path:
     lst = list(Path(r'C:\Program Files').glob('ImageMagick*'))
 
     if len(lst) == 0:
-        raise OSError('ImageMagick을 찾을 수 없음')
+        raise FileNotFoundError('ImageMagick을 찾을 수 없음')
 
     if len(lst) > 1:
         logger.warning('다수의 ImageMagick 경로가 발견됨 {}', list(map(str, lst)))
@@ -34,7 +34,16 @@ def _find_image_magick() -> Path:
     return lst[-1].joinpath('magick.exe')
 
 
-def _log_size(src: int, dst: int):
+def _size_arg(size: int):
+    if size == 0:
+        arg = '100%'
+    else:
+        arg = f'{size}x{size}'
+
+    return arg
+
+
+def _log_size(src: int, dst: int, scaled=True):
     if dst <= src * 0.9:
         level = 'INFO'
     elif dst < src:
@@ -42,7 +51,8 @@ def _log_size(src: int, dst: int):
     else:
         level = 'ERROR'
 
-    logger.log(level, '{} -> {} ({:.1%})', fss(src), fss(dst), dst / src)
+    msg = '' if scaled else ' ([red]NOT scaled[/red])'
+    logger.log(level, '{} -> {} ({:.1%}){}', fss(src), fss(dst), dst / src, msg)
 
 
 class _ImageMagicResizer:
@@ -63,12 +73,20 @@ class _ImageMagicResizer:
         self._format = ext
         self._option = option or ''
 
-    def resize(self, src: Path, dst: Path, size, capture=True) -> bool:
+    def resize(self, src: Path, dst: Path, size: int, capture=True) -> bool:
         raise NotImplementedError
 
     @classmethod
     def find_images(cls, path: Path):
         return (x for x in path.iterdir() if x.suffix.lower() in cls.IMG_EXTS)
+
+    def get_size(self, path):
+        cmd = f'{self._im} identify -ping -format "%w %h" "{path}"'
+        size = sp.run(cmd, capture_output=True, check=True).stdout.decode()
+        return [int(x) for x in size.split(' ')]
+
+    def max_size(self, path):
+        return max(min(self.get_size(x)) for x in self.find_images(path))
 
 
 class ConvertResizer(_ImageMagicResizer):
@@ -95,12 +113,13 @@ class ConvertResizer(_ImageMagicResizer):
 
         return sp.run(args, capture_output=capture, check=False)
 
-    def resize(self, src: Path, dst: Path, size, capture=True):
+    def resize(self, src: Path, dst: Path, size: int, capture=True):
         images = sorted(self.find_images(src))
         if not images:
             raise NoImagesError(src)
 
         ss, ds = 0, 0
+        size_arg = _size_arg(size)
         for image in track(images, console=console, transient=True):
             resized = dst.joinpath(image.name)
             if self._format:
@@ -108,7 +127,7 @@ class ConvertResizer(_ImageMagicResizer):
 
             out = self._convert(src=image,
                                 dst=resized,
-                                size=size,
+                                size=size_arg,
                                 capture=capture)
             if not resized.exists():
                 raise RuntimeError(out.stderr)
@@ -116,7 +135,8 @@ class ConvertResizer(_ImageMagicResizer):
             ss += image.stat().st_size
             ds += resized.stat().st_size
 
-        _log_size(src=ss, dst=ds)
+        scaled = size != 0 and self.max_size(src) > size
+        _log_size(src=ss, dst=ds, scaled=scaled)
 
         return ds < ss
 
@@ -147,10 +167,10 @@ class MogrifyResizer(_ImageMagicResizer):
             while process.poll() is None:
                 yield process.stdout.readline().decode().strip()
 
-    def resize(self, src: Path, dst: Path, size, capture=True):
+    def resize(self, src: Path, dst: Path, size: int, capture=True):
         args = self._args.format(src=src.as_posix(),
                                  dst=dst.as_posix(),
-                                 size=size)
+                                 size=_size_arg(size))
         logger.debug(args)
 
         images_count = sum(1 for _ in self.find_images(src))
@@ -168,13 +188,14 @@ class MogrifyResizer(_ImageMagicResizer):
 
         ss = sum(x.stat().st_size for x in src.glob('*'))
         ds = sum(x.stat().st_size for x in dst.glob('*'))
-        _log_size(src=ss, dst=ds)
+        scaled = size != 0 and self.max_size(src) > size
+        _log_size(src=ss, dst=ds, scaled=scaled)
 
         return ds < ss
 
 
 def _resize(src: Path, dst: Path, subdir: Path, resizer: _ImageMagicResizer,
-            size: str, prefix_original: bool, capture: bool):
+            size: int, prefix_original: bool, capture: bool):
     logger.info('Target: "{}"', subdir.name)
     if not any(True for _ in resizer.find_images(subdir)):
         raise NoImagesError(subdir)
@@ -205,7 +226,7 @@ def _resize(src: Path, dst: Path, subdir: Path, resizer: _ImageMagicResizer,
 
 def resize(src: StrPath,
            dst: Optional[StrPath] = None,
-           size: Union[int, str] = 2000,
+           size=2000,
            ext: Optional[str] = None,
            resize_filter='Mitchell',
            option: Optional[str] = None,
@@ -222,11 +243,6 @@ def resize(src: StrPath,
         subdirs: Iterable = (x for x in src.iterdir() if x.is_dir())
     else:
         subdirs = [src]
-
-    if size == 0:
-        size = '100%'
-    elif isinstance(size, int):
-        size = f'{size}x{size}'
 
     resizer = MogrifyResizer(ext=ext,
                              resize_filter=resize_filter,
