@@ -1,14 +1,16 @@
 name: Scripts
 channels:
-    - defaults
     - conda-forge
+    - defaults
 dependencies:
     - pandas
     - jinja2
     - rich
     - loguru
     - click
+    # dev
     - yapf
     - toml
     - isort
     - pylint
+    - mypy

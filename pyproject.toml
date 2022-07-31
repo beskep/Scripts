@@ -8,7 +8,7 @@ ignore_patterns = ['build/']
 profile = 'google'
 
 [tool.pylint.MASTER]
-load-plugins = ['pylint.extensions.mccabe']
+load-plugins = ['pylint.extensions.mccabe', 'pylint.extensions.docparams']
 
 [tool.pylint.messages_control]
 enable = [
@@ -31,9 +31,18 @@ disable = [
     'missing-class-docstring',
     'missing-function-docstring',
     'missing-module-docstring',
+    'missing-raises-doc',
+    'missing-return-doc',
     'redefined-outer-name',
     'superfluous-parens',
     'too-few-public-methods',
     'too-many-arguments',
+    'trailing-whitespace',
+    'unused-argument',
+    'unused-import',
+    'unused-variable',
     'wrong-import-order',
 ]
+
+[tool.mypy]
+disable_error_code = ['var-annotated', 'import']

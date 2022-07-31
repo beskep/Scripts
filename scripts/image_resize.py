@@ -6,7 +6,7 @@ from loguru import logger
 from rich.progress import track
 
 from .utils import console
-from .utils import file_size_string as fss
+from .utils import file_size_unit
 from .utils import StrPath
 
 
@@ -43,6 +43,11 @@ def _size_arg(size: int):
     return arg
 
 
+def _fs(size: float):
+    s, u = file_size_unit(size)
+    return f'{s: 6.1f} {u}'
+
+
 def _log_size(src: int, dst: int, scaled=True):
     if dst <= src * 0.9:
         level = 'INFO'
@@ -52,7 +57,7 @@ def _log_size(src: int, dst: int, scaled=True):
         level = 'ERROR'
 
     msg = '' if scaled else ' ([red]NOT scaled[/red])'
-    logger.log(level, '{} -> {} ({:.1%}){}', fss(src), fss(dst), dst / src, msg)
+    logger.log(level, '{} -> {} ({:.1%}){}', _fs(src), _fs(dst), dst / src, msg)
 
 
 class _ImageMagicResizer:
@@ -268,4 +273,4 @@ def resize(src: StrPath,
             logger.warning(str(e))
             continue
         except (OSError, RuntimeError, ValueError) as e:
-            logger.catch(e, reraise=True)
+            logger.catch(e, reraise=True)  # type: ignore
