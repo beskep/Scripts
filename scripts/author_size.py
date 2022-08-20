@@ -7,6 +7,7 @@ from loguru import logger
 import pandas as pd
 
 from .utils import file_size_string as fss
+from .utils import print_df
 
 p_author = re.compile(r'^\[.*\((.*?)\)].*')
 
@@ -112,7 +113,7 @@ def author_size(path, viz, drop_na=True):
 
     # 개별 파일 크기별로 정리
     logger.info('Files by size')
-    print('\n', df.head(10))
+    print_df(df.head(10))
     _visualize(df=df,
                path=root.joinpath('Comics-Book-Size.html'),
                viz_style=viz)
@@ -122,7 +123,7 @@ def author_size(path, viz, drop_na=True):
         df=(df.loc[df['author'] != 'N／A'] if drop_na else df))
     df_author.sort_values(by='SizeMB', inplace=True, ascending=False)
 
-    print('\n', df_author.head(10))
+    print_df(df_author.head(10))
     _visualize(df=df_author,
                path=root.joinpath('Comics-Author-Size.html'),
                subset='SizeMB',

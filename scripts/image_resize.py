@@ -56,7 +56,7 @@ def _log_size(src: int, dst: int, scaled=True):
     else:
         level = 'ERROR'
 
-    msg = '' if scaled else ' ([red]NOT scaled[/red])'
+    msg = '' if scaled else ' ([red italic]NOT scaled[/])'
     logger.log(level, '{} -> {} ({:.1%}){}', _fs(src), _fs(dst), dst / src, msg)
 
 
