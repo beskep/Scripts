@@ -1,5 +1,6 @@
 from os import PathLike
 from typing import Optional, Union
+import winsound
 
 from loguru import logger
 import pandas as pd
@@ -54,6 +55,12 @@ def file_size_unit(size: float, suffix='B'):
 def file_size_string(size: float, suffix='B'):
     size, unit = file_size_unit(size=size, suffix=suffix)
     return f'{size:.2f} {unit}'
+
+
+def play_sound(ok=True):
+    if hasattr(winsound, 'MessageBeep'):
+        t = winsound.MB_OK if ok else winsound.MB_ICONHAND
+        winsound.MessageBeep(t)
 
 
 def df_table(df: pd.DataFrame,

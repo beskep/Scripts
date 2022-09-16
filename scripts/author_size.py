@@ -123,7 +123,7 @@ def author_size(path, viz, drop_na=True):
         df=(df.loc[df['author'] != 'N／A'] if drop_na else df))
     df_author.sort_values(by='SizeMB', inplace=True, ascending=False)
 
-    print_df(df_author.head(10))
+    print_df(df_author.head(10).reset_index())
     _visualize(df=df_author,
                path=root.joinpath('Comics-Author-Size.html'),
                subset='SizeMB',
