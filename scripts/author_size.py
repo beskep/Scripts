@@ -1,10 +1,9 @@
+import re
 from collections import defaultdict
 from pathlib import Path
-import re
-from typing import Optional
 
-from loguru import logger
 import pandas as pd
+from loguru import logger
 
 from .utils import file_size_string as fss
 from .utils import print_df
@@ -12,7 +11,7 @@ from .utils import print_df
 p_author = re.compile(r'^\[.*\((.*?)\)].*')
 
 
-def detect_author(file_name: str) -> Optional[str]:
+def detect_author(file_name: str) -> str | None:
     m = p_author.match(file_name)
 
     return None if m is None else m.group(1)
@@ -48,7 +47,7 @@ def read_wiztree(file):
     return pd.DataFrame(dd)
 
 
-def find_wiztree_file(root: Optional[Path]):
+def find_wiztree_file(root: Path | None):
     if root is None:
         root = Path('.')
 

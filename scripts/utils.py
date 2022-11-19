@@ -1,15 +1,15 @@
-from os import PathLike
-from typing import Optional, Union
+import ctypes
 import winsound
+from os import PathLike
 
-from loguru import logger
 import pandas as pd
+from loguru import logger
 from rich.console import Console
 from rich.logging import RichHandler
 from rich.table import Table
 from rich.theme import Theme
 
-StrPath = Union[str, PathLike]
+StrPath = str | PathLike
 console = Console(theme=Theme({'logging.level.success': 'blue'}))
 _handler = RichHandler(console=console, markup=True, log_time_format='[%X]')
 _LEVELS = {
@@ -23,7 +23,7 @@ _LEVELS = {
 }
 
 
-def set_logger(level: Union[int, str] = 20):
+def set_logger(level: int | str = 20):
     if isinstance(level, str):
         try:
             level = _LEVELS[level.upper()]
@@ -57,16 +57,10 @@ def file_size_string(size: float, suffix='B'):
     return f'{size:.2f} {unit}'
 
 
-def play_sound(ok=True):
-    if hasattr(winsound, 'MessageBeep'):
-        t = winsound.MB_OK if ok else winsound.MB_ICONHAND
-        winsound.MessageBeep(t)
-
-
 def df_table(df: pd.DataFrame,
-             table: Optional[Table] = None,
+             table: Table | None = None,
              show_index=True,
-             index_name: Optional[str] = None) -> Table:
+             index_name: str | None = None) -> Table:
     if table is None:
         table = Table()
 
@@ -86,11 +80,26 @@ def df_table(df: pd.DataFrame,
 
 
 def print_df(df: pd.DataFrame,
-             table: Optional[Table] = None,
+             table: Table | None = None,
              show_index=True,
-             index_name: Optional[str] = None):
+             index_name: str | None = None):
     table = df_table(df=df,
                      table=table,
                      show_index=show_index,
                      index_name=index_name)
     console.print(table)
+
+
+class WindowsMessage:
+    WS_EX_TOPMOST = 0x40000
+
+    @staticmethod
+    def msg_beep(ok=True):
+        if hasattr(winsound, 'MessageBeep'):
+            t = winsound.MB_OK if ok else winsound.MB_ICONHAND
+            winsound.MessageBeep(t)
+
+    @classmethod
+    def msg_box(cls, message: str, title: str | None = None):
+        ctypes.windll.user32.MessageBoxExW(None, message, title,
+                                           cls.WS_EX_TOPMOST)

@@ -1,8 +1,9 @@
-name: Scripts
+name: scripts
 channels:
     - conda-forge
     - defaults
 dependencies:
+    - python>=3.11
     - pandas
     - jinja2
     - rich

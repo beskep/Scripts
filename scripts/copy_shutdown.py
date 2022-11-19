@@ -1,5 +1,7 @@
-from pathlib import Path
+"""TeraCopy 등 프로그램 대신 이용"""
+
 import subprocess as sp
+from pathlib import Path
 
 from loguru import logger
 

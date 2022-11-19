@@ -4,9 +4,6 @@ based_on_style = 'google'
 [tool.yapfignore]
 ignore_patterns = ['build/']
 
-[tool.isort]
-profile = 'google'
-
 [tool.pylint.MASTER]
 load-plugins = ['pylint.extensions.mccabe', 'pylint.extensions.docparams']
 

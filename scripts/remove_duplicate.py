@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Iterable, Optional, Tuple
+from typing import Iterable
 
 from loguru import logger
 
@@ -15,9 +15,7 @@ def _suffix(value: str):
 
 class DuplicateCleaner:
 
-    def __init__(self,
-                 keep='webp',
-                 remove: Optional[Tuple[str]] = None) -> None:
+    def __init__(self, keep='webp', remove: tuple[str] | None = None) -> None:
         self._keep = _suffix(keep)
         self._remove = tuple(_suffix(x) for x in remove) if remove else ()
 
@@ -49,7 +47,7 @@ class DuplicateCleaner:
 def remove_duplicate(src: StrPath,
                      batch=True,
                      keep: str = 'webp',
-                     remove: Optional[Tuple[str]] = None):
+                     remove: tuple[str] | None = None):
     src = Path(src)
 
     if batch:

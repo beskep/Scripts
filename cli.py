@@ -1,11 +1,11 @@
 import click
 from loguru import logger
 
-from scripts import utils
 from scripts.author_size import author_size as _size
 from scripts.copy_shutdown import copy_shutdown as _copy
 from scripts.image_resize import resize as _resize
 from scripts.remove_duplicate import remove_duplicate as _duplicate
+from scripts.utils import WindowsMessage, set_logger
 
 _dir = click.Path(exists=True, file_okay=False)
 
@@ -13,13 +13,24 @@ _dir = click.Path(exists=True, file_okay=False)
 @click.group()
 @click.option('--debug', '-d', is_flag=True)
 @click.option('--loglevel', '-l', default=20)
-def cli(debug, loglevel):
-    utils.set_logger(level=min((10 if debug else 20), loglevel))
+@click.option('--notification',
+              '-n',
+              type=click.Choice(['none', 'sound', 'msgbox']),
+              default='sound')
+def cli(debug, loglevel, notification):
+    set_logger(level=min((10 if debug else 20), loglevel))
 
 
 @cli.result_callback()
-def play_sound(*args, **kwargs):
-    utils.play_sound()
+def notification(*args, **kwargs):
+    n = kwargs['notification']
+
+    if n == 'sound':
+        WindowsMessage.msg_beep()
+    elif n == 'msgbox':
+        WindowsMessage.msg_box(message='Done', title='scripts')
+
+    logger.info('Done')
 
 
 @cli.command()

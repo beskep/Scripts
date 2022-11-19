@@ -1,13 +1,11 @@
-from pathlib import Path
 import subprocess as sp
-from typing import Iterable, Optional
+from pathlib import Path
+from typing import Iterable
 
 from loguru import logger
 from rich.progress import track
 
-from .utils import console
-from .utils import file_size_unit
-from .utils import StrPath
+from .utils import StrPath, console, file_size_unit
 
 
 class ResizedDirectoryError(ValueError):
@@ -64,11 +62,11 @@ class _ImageMagicResizer:
     IMG_EXTS = {'.jpg', '.jpeg', '.png', '.bmp', '.gif', '.tiff', '.webp'}
 
     def __init__(self,
-                 path: Optional[StrPath] = None,
-                 ext: Optional[str] = None,
+                 path: StrPath | None = None,
+                 ext: str | None = None,
                  resize_filter='Mitchell',
                  shrink_only=True,
-                 option: Optional[str] = None) -> None:
+                 option: str | None = None) -> None:
         if path is None:
             path = _find_image_magick()
 
@@ -97,11 +95,11 @@ class _ImageMagicResizer:
 class ConvertResizer(_ImageMagicResizer):
 
     def __init__(self,
-                 path: Optional[StrPath] = None,
-                 ext: Optional[str] = None,
+                 path: StrPath | None = None,
+                 ext: str | None = None,
                  resize_filter='Mitchell',
                  shrink_only=True,
-                 option: Optional[str] = None) -> None:
+                 option: str | None = None) -> None:
         super().__init__(path=path,
                          ext=ext,
                          resize_filter=resize_filter,
@@ -149,11 +147,11 @@ class ConvertResizer(_ImageMagicResizer):
 class MogrifyResizer(_ImageMagicResizer):
 
     def __init__(self,
-                 path: Optional[StrPath] = None,
-                 ext: Optional[str] = None,
+                 path: StrPath | None = None,
+                 ext: str | None = None,
                  resize_filter='Mitchell',
                  shrink_only=True,
-                 option: Optional[str] = None) -> None:
+                 option: str | None = None) -> None:
         super().__init__(path=path,
                          ext=ext,
                          resize_filter=resize_filter,
@@ -230,11 +228,11 @@ def _resize(src: Path, dst: Path, subdir: Path, resizer: _ImageMagicResizer,
 
 
 def resize(src: StrPath,
-           dst: Optional[StrPath] = None,
+           dst: StrPath | None = None,
            size=2000,
-           ext: Optional[str] = None,
+           ext: str | None = None,
            resize_filter='Mitchell',
-           option: Optional[str] = None,
+           option: str | None = None,
            batch=True,
            capture=True,
            prefix_original=True):
