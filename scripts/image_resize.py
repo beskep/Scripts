@@ -21,15 +21,18 @@ class NoImagesError(FileNotFoundError):
 
 
 def _find_image_magick() -> Path:
-    lst = list(Path(r'C:\Program Files').glob('ImageMagick*'))
+    lst = sorted(Path(r'C:\Program Files').glob('ImageMagick*'))
 
     if len(lst) == 0:
-        raise FileNotFoundError('ImageMagick을 찾을 수 없음')
+        raise FileNotFoundError('ImageMagick Not Found')
+
+    path = lst[-1].joinpath('magick.exe')
 
     if len(lst) > 1:
-        logger.warning('다수의 ImageMagick 경로가 발견됨 {}', list(map(str, lst)))
+        logger.warning('다수의 ImageMagick 경로가 발견됨: {}', list(map(str, lst)))
+        logger.info('ImageMagick: "{}"', str(path))
 
-    return lst[-1].joinpath('magick.exe')
+    return path
 
 
 def _size_arg(size: int):
@@ -167,6 +170,7 @@ class MogrifyResizer(_ImageMagicResizer):
     @staticmethod
     def _mogrify(args):
         with sp.Popen(args=args, stdout=sp.PIPE, stderr=sp.DEVNULL) as process:
+            assert process.stdout is not None
             while process.poll() is None:
                 yield process.stdout.readline().decode().strip()
 
@@ -271,4 +275,5 @@ def resize(src: StrPath,
             logger.warning(str(e))
             continue
         except (OSError, RuntimeError, ValueError) as e:
-            logger.catch(e, reraise=True)  # type: ignore
+            logger.exception(e)
+            break
