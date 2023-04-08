@@ -1,4 +1,5 @@
 import subprocess as sp
+from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Iterable
 
@@ -30,7 +31,7 @@ def _find_image_magick() -> Path:
 
     if len(lst) > 1:
         logger.warning('다수의 ImageMagick 경로가 발견됨: {}', list(map(str, lst)))
-        logger.info('ImageMagick: "{}"', str(path))
+        logger.info('ImageMagick="{}"', str(path))
 
     return path
 
@@ -49,7 +50,7 @@ def _fs(size: float):
     return f'{s: 6.1f} {u}'
 
 
-def _log_size(src: int, dst: int, scaled=True):
+def _log_size(src: int, dst: int, scaled: float):
     if dst <= src * 0.9:
         level = 'INFO'
     elif dst < src:
@@ -57,11 +58,20 @@ def _log_size(src: int, dst: int, scaled=True):
     else:
         level = 'ERROR'
 
-    msg = '' if scaled else ' ([red italic]NOT scaled[/])'
-    logger.log(level, '{} -> {} ({:.1%}){}', _fs(src), _fs(dst), dst / src, msg)
+    if scaled:
+        msg = f'{scaled:6.1%} scaled'
+    else:
+        msg = '[red italic]NOT scaled[/]'
+
+    logger.log(level,
+               '{src} -> {dst} ({ratio:6.1%}) | {msg}',
+               src=_fs(src),
+               dst=_fs(dst),
+               ratio=dst / src,
+               msg=msg)
 
 
-class _ImageMagicResizer:
+class _ImageMagicResizer(ABC):
     IMG_EXTS = {'.jpg', '.jpeg', '.png', '.bmp', '.gif', '.tiff', '.webp'}
 
     def __init__(self,
@@ -79,8 +89,9 @@ class _ImageMagicResizer:
         self._format = ext
         self._option = option or ''
 
+    @abstractmethod
     def resize(self, src: Path, dst: Path, size: int, capture=True) -> bool:
-        raise NotImplementedError
+        pass
 
     @classmethod
     def find_images(cls, path: Path):
@@ -91,8 +102,14 @@ class _ImageMagicResizer:
         size = sp.run(cmd, capture_output=True, check=True).stdout.decode()
         return [int(x) for x in size.split(' ')]
 
-    def max_size(self, path):
-        return max(min(self.get_size(x)) for x in self.find_images(path))
+    def target_ratio(self, path: Path, size: int) -> float:
+        if not size:
+            return 0.0
+
+        images = tuple(self.find_images(path))
+        target = sum(1 for x in images if min(self.get_size(x)) > size)
+
+        return target / len(images)
 
 
 class ConvertResizer(_ImageMagicResizer):
@@ -141,8 +158,7 @@ class ConvertResizer(_ImageMagicResizer):
             ss += image.stat().st_size
             ds += resized.stat().st_size
 
-        scaled = size != 0 and self.max_size(src) > size
-        _log_size(src=ss, dst=ds, scaled=scaled)
+        _log_size(src=ss, dst=ds, scaled=self.target_ratio(src, size))
 
         return ds < ss
 
@@ -195,15 +211,14 @@ class MogrifyResizer(_ImageMagicResizer):
 
         ss = sum(x.stat().st_size for x in src.glob('*'))
         ds = sum(x.stat().st_size for x in dst.glob('*'))
-        scaled = size != 0 and self.max_size(src) > size
-        _log_size(src=ss, dst=ds, scaled=scaled)
+        _log_size(src=ss, dst=ds, scaled=self.target_ratio(src, size))
 
         return ds < ss
 
 
 def _resize(src: Path, dst: Path, subdir: Path, resizer: _ImageMagicResizer,
             size: int, prefix_original: bool, capture: bool):
-    logger.info('Target: "{}"', subdir.name)
+    logger.info('Target="{}"', subdir.name)
     if not any(True for _ in resizer.find_images(subdir)):
         raise NoImagesError(subdir)
 
@@ -255,10 +270,10 @@ def resize(src: StrPath,
                              resize_filter=resize_filter,
                              option=option)
 
-    logger.info('SRC: "{}"', src)
-    logger.info('DST: "{}"', dst)
-    logger.info('Output size: "{}" | ext: "{}" | filter: "{}" | option: "{}"',
-                size, ext, resize_filter, option)
+    logger.info('SRC="{}"', src)
+    logger.info('DST="{}"', dst)
+    logger.info('size={!r} | ext={!r} | filter={!r} | option={!r}', size, ext,
+                resize_filter, option)
 
     for subdir in subdirs:
         try:

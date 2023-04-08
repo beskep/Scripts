@@ -5,13 +5,26 @@ from os import PathLike
 import pandas as pd
 from loguru import logger
 from rich.console import Console
+from rich.highlighter import ReprHighlighter
 from rich.logging import RichHandler
 from rich.table import Table
 from rich.theme import Theme
 
 StrPath = str | PathLike
-console = Console(theme=Theme({'logging.level.success': 'blue'}))
-_handler = RichHandler(console=console, markup=True, log_time_format='[%X]')
+
+
+class CustomHighlighter(ReprHighlighter):
+
+    highlights = ReprHighlighter.highlights.copy()
+    highlights.append(r'(?P<vb>\|)')
+
+
+theme = Theme({'logging.level.success': 'blue', 'repr.vb': 'bold'})
+console = Console(theme=theme)
+_handler = RichHandler(console=console,
+                       highlighter=CustomHighlighter(),
+                       markup=True,
+                       log_time_format='[%X]')
 _LEVELS = {
     'TRACE': 5,
     'DEBUG': 10,

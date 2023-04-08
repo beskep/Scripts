@@ -101,7 +101,7 @@ def author_size(path, viz, drop_na=True):
     # 대상 파일 찾기
     path = find_file(path)
     root = path.parent
-    logger.info(f'File: "{path.as_posix()}"')
+    logger.info('File="{}"', path)
 
     # 파읽 불러오기
     if 'WizTree' in path.name:

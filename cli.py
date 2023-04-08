@@ -124,11 +124,11 @@ def size(viz, na, path):
 @click.argument('dst', type=_dir)
 def copy(run, shutdown, mirror, hidden, fl, src, dst):
     """robocopy"""
-    logger.info('run: {}', run)
-    logger.info('shutdown: {}', shutdown)
-    logger.info('mirror: {}', mirror)
-    logger.info('hidden: {}', hidden)
-    logger.info('fl: {}', fl)
+    logger.info('run={!r}', run)
+    logger.info('shutdown={!r}', shutdown)
+    logger.info('mirror={!r}', mirror)
+    logger.info('hidden={!r}', hidden)
+    logger.info('fl={!r}', fl)
 
     click.confirm('Continue?', abort=True)
 

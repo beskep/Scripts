@@ -58,5 +58,5 @@ def remove_duplicate(src: StrPath,
     cleaner = DuplicateCleaner(keep=keep, remove=remove)
 
     for subdir in subdirs:
-        logger.info('Target: "{}"', subdir.name)
+        logger.info('Target="{}"', subdir.name)
         cleaner.clean(subdir)
