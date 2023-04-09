@@ -50,27 +50,6 @@ def _fs(size: float):
     return f'{s: 6.1f} {u}'
 
 
-def _log_size(src: int, dst: int, scaled: float):
-    if dst <= src * 0.9:
-        level = 'INFO'
-    elif dst < src:
-        level = 'WARNING'
-    else:
-        level = 'ERROR'
-
-    if scaled:
-        msg = f'{scaled:6.1%} scaled'
-    else:
-        msg = '[red italic]NOT scaled[/]'
-
-    logger.log(level,
-               '{src} -> {dst} ({ratio:6.1%}) | {msg}',
-               src=_fs(src),
-               dst=_fs(dst),
-               ratio=dst / src,
-               msg=msg)
-
-
 class _ImageMagicResizer(ABC):
     IMG_EXTS = {'.jpg', '.jpeg', '.png', '.bmp', '.gif', '.tiff', '.webp'}
 
@@ -102,14 +81,35 @@ class _ImageMagicResizer(ABC):
         size = sp.run(cmd, capture_output=True, check=True).stdout.decode()
         return [int(x) for x in size.split(' ')]
 
-    def target_ratio(self, path: Path, size: int) -> float:
-        if not size:
-            return 0.0
+    def scaling_ratio(self, path: Path, size: int) -> Iterable[float]:
+        for image in self.find_images(path):
+            ratio = size / min(self.get_size(image))
+            yield 0.0 if ratio >= 1.0 else ratio
 
-        images = tuple(self.find_images(path))
-        target = sum(1 for x in images if min(self.get_size(x)) > size)
+    def log(self, src: Path, ss: int, ds: int, size: int):
+        if ds <= ss * 0.9:
+            level = 'INFO'
+        elif ds < ss:
+            level = 'WARNING'
+        else:
+            level = 'ERROR'
 
-        return target / len(images)
+        ratio = tuple(self.scaling_ratio(path=src, size=size))
+        scaled = sum(1 for x in ratio if x > 0)
+        total = len(ratio)
+
+        msg = f'Scaled Images {scaled: 3d}/{total: 3d}={scaled/total:4.0%}'
+        if scaled:
+            msg = f'{msg} (avg ratio {sum(ratio)/total:5.1%})'
+        else:
+            msg = f'{msg} [red italic](NOT scaled)[/]'
+
+        logger.log(level,
+                   'File Size {ss} -> {ds} ({r:6.1%}) | {msg}',
+                   ss=_fs(ss),
+                   ds=_fs(ds),
+                   r=ds / ss,
+                   msg=msg)
 
 
 class ConvertResizer(_ImageMagicResizer):
@@ -158,7 +158,7 @@ class ConvertResizer(_ImageMagicResizer):
             ss += image.stat().st_size
             ds += resized.stat().st_size
 
-        _log_size(src=ss, dst=ds, scaled=self.target_ratio(src, size))
+        self.log(src=src, ss=ss, ds=ds, size=size)
 
         return ds < ss
 
@@ -211,7 +211,7 @@ class MogrifyResizer(_ImageMagicResizer):
 
         ss = sum(x.stat().st_size for x in src.glob('*'))
         ds = sum(x.stat().st_size for x in dst.glob('*'))
-        _log_size(src=ss, dst=ds, scaled=self.target_ratio(src, size))
+        self.log(src=src, ss=ss, ds=ds, size=size)
 
         return ds < ss
 
