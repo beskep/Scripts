@@ -4,6 +4,10 @@ based_on_style = 'google'
 [tool.yapfignore]
 ignore_patterns = ['build/']
 
+[tool.ruff]
+select = ['E', 'F', 'W', 'C90', 'N', 'ICN', 'RET', 'SIM', 'ERA', 'PD', 'PL']
+ignore = ['PD901', 'PLR0913', 'RET504', 'SIM108']
+
 [tool.pylint.MASTER]
 load-plugins = ['pylint.extensions.mccabe', 'pylint.extensions.docparams']
 

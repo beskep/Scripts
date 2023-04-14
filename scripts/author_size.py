@@ -108,7 +108,8 @@ def author_size(path, viz, drop_na=True):
         df = read_wiztree(path)
     else:
         df = read_du(path)
-    df.sort_values(by='SizeMB', inplace=True, ascending=False)
+
+    df = df.sort_values(by='SizeMB', ascending=False)
 
     # 개별 파일 크기별로 정리
     logger.info('Files by size')
@@ -120,7 +121,7 @@ def author_size(path, viz, drop_na=True):
     # 작가 크기/개수별 정리
     df_author = _author_size(
         df=(df.loc[df['author'] != 'N／A'] if drop_na else df))
-    df_author.sort_values(by='SizeMB', inplace=True, ascending=False)
+    df_author = df_author.sort_values(by='SizeMB', ascending=False)
 
     print_df(df_author.head(10).reset_index())
     _visualize(df=df_author,

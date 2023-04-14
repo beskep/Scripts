@@ -56,11 +56,12 @@ def set_logger(level: int | str = 20):
 
 
 def file_size_unit(size: float, suffix='B'):
+    k = 1024.0
     for unit in ['', 'K', 'M', 'G', 'T', 'P', 'E', 'Z']:
-        if abs(size) < 1024.0:
+        if abs(size) < k:
             return size, f'{unit}{suffix}'
 
-        size /= 1024.0
+        size /= k
 
     return size, f'Y{suffix}'
 
@@ -84,7 +85,7 @@ def df_table(df: pd.DataFrame,
     for column in df.columns:
         table.add_column(str(column))
 
-    for index, value_list in enumerate(df.values.tolist()):
+    for index, value_list in enumerate(df.to_numpy().tolist()):
         row = [str(index)] if show_index else []
         row += [str(x) for x in value_list]
         table.add_row(*row)
