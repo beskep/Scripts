@@ -14,17 +14,18 @@ StrPath = str | PathLike
 
 
 class CustomHighlighter(ReprHighlighter):
-
     highlights = ReprHighlighter.highlights.copy()
     highlights.append(r'(?P<vb>\|)')
 
 
 theme = Theme({'logging.level.success': 'blue', 'repr.vb': 'bold'})
 console = Console(theme=theme)
-_handler = RichHandler(console=console,
-                       highlighter=CustomHighlighter(),
-                       markup=True,
-                       log_time_format='[%X]')
+_handler = RichHandler(
+    console=console,
+    highlighter=CustomHighlighter(),
+    markup=True,
+    log_time_format='[%X]',
+)
 _LEVELS = {
     'TRACE': 5,
     'DEBUG': 10,
@@ -32,7 +33,7 @@ _LEVELS = {
     'SUCCESS': 25,
     'WARNING': 30,
     'ERROR': 40,
-    'CRITICAL': 50
+    'CRITICAL': 50,
 }
 
 
@@ -46,11 +47,13 @@ def set_logger(level: int | str = 20):
     if getattr(logger, 'lvl', -1) != level:
         logger.remove()
         logger.add(_handler, level=level, format='{message}', backtrace=False)
-        logger.add('script.log',
-                   level=min(20, level),
-                   rotation='1 month',
-                   retention='1 year',
-                   encoding='UTF-8-SIG')
+        logger.add(
+            'script.log',
+            level=min(20, level),
+            rotation='1 month',
+            retention='1 year',
+            encoding='UTF-8-SIG',
+        )
 
         setattr(logger, 'lvl', level)
 
@@ -71,10 +74,12 @@ def file_size_string(size: float, suffix='B'):
     return f'{size:.2f} {unit}'
 
 
-def df_table(df: pd.DataFrame,
-             table: Table | None = None,
-             show_index=True,
-             index_name: str | None = None) -> Table:
+def df_table(
+    df: pd.DataFrame,
+    table: Table | None = None,
+    show_index=True,
+    index_name: str | None = None,
+) -> Table:
     if table is None:
         table = Table()
 
@@ -93,14 +98,13 @@ def df_table(df: pd.DataFrame,
     return table
 
 
-def print_df(df: pd.DataFrame,
-             table: Table | None = None,
-             show_index=True,
-             index_name: str | None = None):
-    table = df_table(df=df,
-                     table=table,
-                     show_index=show_index,
-                     index_name=index_name)
+def print_df(
+    df: pd.DataFrame,
+    table: Table | None = None,
+    show_index=True,
+    index_name: str | None = None,
+):
+    table = df_table(df=df, table=table, show_index=show_index, index_name=index_name)
     console.print(table)
 
 
@@ -115,5 +119,4 @@ class WindowsMessage:
 
     @classmethod
     def msg_box(cls, message: str, title: str | None = None):
-        ctypes.windll.user32.MessageBoxExW(None, message, title,
-                                           cls.WS_EX_TOPMOST)
+        ctypes.windll.user32.MessageBoxExW(None, message, title, cls.WS_EX_TOPMOST)

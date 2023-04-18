@@ -1,15 +1,11 @@
-[tool.yapf]
-based_on_style = 'google'
+[tool.pyink]
+pyink-use-majority-quotes = true
 
-[tool.yapfignore]
-ignore_patterns = ['build/']
+[tool.isort]
+profile = 'black'
 
 [tool.ruff]
-select = ['E', 'F', 'W', 'C90', 'N', 'ICN', 'RET', 'SIM', 'ERA', 'PD', 'PL']
-ignore = ['PD901', 'PLR0913', 'RET504', 'SIM108']
-
-[tool.pylint.MASTER]
-load-plugins = ['pylint.extensions.mccabe', 'pylint.extensions.docparams']
+select = ['E', 'F', 'W', 'C90', 'N', 'RET', 'SIM', 'ERA', 'PD', 'PL', 'RUF']
 
 [tool.pylint.messages_control]
 enable = [
@@ -32,8 +28,6 @@ disable = [
     'missing-class-docstring',
     'missing-function-docstring',
     'missing-module-docstring',
-    'missing-raises-doc',
-    'missing-return-doc',
     'redefined-outer-name',
     'superfluous-parens',
     'too-few-public-methods',
@@ -47,3 +41,6 @@ disable = [
 
 [tool.mypy]
 disable_error_code = ['var-annotated', 'import']
+check_untyped_defs = true
+warn_unused_ignores = true
+warn_unused_configs = true

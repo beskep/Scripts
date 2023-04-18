@@ -7,10 +7,7 @@ from .utils import StrPath
 
 
 def _suffix(value: str):
-    if not value.startswith('.'):
-        value = f'.{value}'
-
-    return value
+    return value if value.startswith('.') else f'.{value}'
 
 
 class DuplicateCleaner:
@@ -29,25 +26,29 @@ class DuplicateCleaner:
         return not self._remove or path.suffix in self._remove
 
     def duplicate_files(self, keep: Path):
-        return (x for x in keep.parent.glob(f'{keep.stem}.*')
-                if self._is_duplicate(x))
+        return (x for x in keep.parent.glob(f'{keep.stem}.*') if self._is_duplicate(x))
 
     def clean(self, root: Path):
         for keep in self.files_to_keep(root):
             files = list(self.duplicate_files(keep))
 
             if files:
-                logger.info('Keep "{}" | Remove {}', keep.name,
-                            ', '.join(f'"{x.suffix}"' for x in files))
+                logger.info(
+                    'Keep "{}" | Remove {}',
+                    keep.name,
+                    ', '.join(f'"{x.suffix}"' for x in files),
+                )
 
             for file in files:
                 file.unlink()
 
 
-def remove_duplicate(src: StrPath,
-                     batch=True,
-                     keep: str = 'webp',
-                     remove: tuple[str] | None = None):
+def remove_duplicate(
+    src: StrPath,
+    batch=True,
+    keep: str = 'webp',
+    remove: tuple[str] | None = None,
+):
     src = Path(src)
 
     if batch:

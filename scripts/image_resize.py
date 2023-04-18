@@ -8,6 +8,8 @@ from rich.progress import track
 
 from .utils import StrPath, console, file_size_unit
 
+# ruff: noqa: PLR0913
+
 
 class ResizedDirectoryError(ValueError):
     pass
@@ -37,12 +39,7 @@ def _find_image_magick() -> Path:
 
 
 def _size_arg(size: int):
-    if size == 0:
-        arg = '100%'
-    else:
-        arg = f'{size}x{size}'
-
-    return arg
+    return '100%' if size == 0 else f'{size}x{size}'
 
 
 def _fs(size: float):
@@ -53,12 +50,14 @@ def _fs(size: float):
 class _ImageMagicResizer(ABC):
     IMG_EXTS = {'.jpg', '.jpeg', '.png', '.bmp', '.gif', '.tiff', '.webp'}
 
-    def __init__(self,
-                 path: StrPath | None = None,
-                 ext: str | None = None,
-                 resize_filter='Mitchell',
-                 shrink_only=True,
-                 option: str | None = None) -> None:
+    def __init__(
+        self,
+        path: StrPath | None = None,
+        ext: str | None = None,
+        resize_filter='Mitchell',
+        shrink_only=True,
+        option: str | None = None,
+    ) -> None:
         if path is None:
             path = _find_image_magick()
 
@@ -84,7 +83,7 @@ class _ImageMagicResizer(ABC):
     def scaling_ratio(self, path: Path, size: int) -> Iterable[float]:
         for image in self.find_images(path):
             ratio = size / min(self.get_size(image))
-            yield 0.0 if ratio >= 1.0 else ratio
+            yield 0 if ratio >= 1 else ratio
 
     def log(self, src: Path, ss: int, ds: int, size: int):
         if ds <= ss * 0.9:
@@ -104,35 +103,41 @@ class _ImageMagicResizer(ABC):
         else:
             msg = f'{msg} [red italic](NOT scaled)[/]'
 
-        logger.log(level,
-                   'File Size {ss} -> {ds} ({r:6.1%}) | {msg}',
-                   ss=_fs(ss),
-                   ds=_fs(ds),
-                   r=ds / ss,
-                   msg=msg)
+        logger.log(
+            level,
+            'File Size {ss} -> {ds} ({r:6.1%}) | {msg}',
+            ss=_fs(ss),
+            ds=_fs(ds),
+            r=ds / ss,
+            msg=msg,
+        )
 
 
 class ConvertResizer(_ImageMagicResizer):
 
-    def __init__(self,
-                 path: StrPath | None = None,
-                 ext: str | None = None,
-                 resize_filter='Mitchell',
-                 shrink_only=True,
-                 option: str | None = None) -> None:
-        super().__init__(path=path,
-                         ext=ext,
-                         resize_filter=resize_filter,
-                         shrink_only=shrink_only,
-                         option=option)
+    def __init__(
+        self,
+        path: StrPath | None = None,
+        ext: str | None = None,
+        resize_filter='Mitchell',
+        shrink_only=True,
+        option: str | None = None,
+    ) -> None:
+        super().__init__(
+            path=path,
+            ext=ext,
+            resize_filter=resize_filter,
+            shrink_only=shrink_only,
+            option=option,
+        )
 
-        self._args = (f'{self._im} convert -resize {{size}}{self._shrink} '
-                      f'-filter {self._filter} {option} "{{src}}" "{{dst}}"')
+        self._args = (
+            f'{self._im} convert -resize {{size}}{self._shrink} '
+            f'-filter {self._filter} {option} "{{src}}" "{{dst}}"'
+        )
 
     def _convert(self, src: Path, dst: Path, size, capture=True):
-        args = self._args.format(src=src.as_posix(),
-                                 dst=dst.as_posix(),
-                                 size=size)
+        args = self._args.format(src=src.as_posix(), dst=dst.as_posix(), size=size)
 
         return sp.run(args, capture_output=capture, check=False)
 
@@ -148,10 +153,7 @@ class ConvertResizer(_ImageMagicResizer):
             if self._format:
                 resized = resized.with_suffix(f'.{self._format}')
 
-            out = self._convert(src=image,
-                                dst=resized,
-                                size=size_arg,
-                                capture=capture)
+            out = self._convert(src=image, dst=resized, size=size_arg, capture=capture)
             if not resized.exists():
                 raise RuntimeError(out.stderr)
 
@@ -165,23 +167,29 @@ class ConvertResizer(_ImageMagicResizer):
 
 class MogrifyResizer(_ImageMagicResizer):
 
-    def __init__(self,
-                 path: StrPath | None = None,
-                 ext: str | None = None,
-                 resize_filter='Mitchell',
-                 shrink_only=True,
-                 option: str | None = None) -> None:
-        super().__init__(path=path,
-                         ext=ext,
-                         resize_filter=resize_filter,
-                         shrink_only=shrink_only,
-                         option=option)
+    def __init__(
+        self,
+        path: StrPath | None = None,
+        ext: str | None = None,
+        resize_filter='Mitchell',
+        shrink_only=True,
+        option: str | None = None,
+    ) -> None:
+        super().__init__(
+            path=path,
+            ext=ext,
+            resize_filter=resize_filter,
+            shrink_only=shrink_only,
+            option=option,
+        )
 
         fmt = '' if ext is None else f'-format {ext}'
-        self._args = (f'{self._im} mogrify -verbose {fmt} '
-                      f'-resize {{size}}{self._shrink} '
-                      f'-filter {self._filter} {option} '
-                      f'-path "{{dst}}" "{{src}}/*"')
+        self._args = (
+            f'{self._im} mogrify -verbose {fmt} '
+            f'-resize {{size}}{self._shrink} '
+            f'-filter {self._filter} {option} '
+            f'-path "{{dst}}" "{{src}}/*"'
+        )
 
     @staticmethod
     def _mogrify(args):
@@ -191,9 +199,9 @@ class MogrifyResizer(_ImageMagicResizer):
                 yield process.stdout.readline().decode().strip()
 
     def resize(self, src: Path, dst: Path, size: int, capture=True):
-        args = self._args.format(src=src.as_posix(),
-                                 dst=dst.as_posix(),
-                                 size=_size_arg(size))
+        args = self._args.format(
+            src=src.as_posix(), dst=dst.as_posix(), size=_size_arg(size)
+        )
         logger.debug(args)
 
         images_count = sum(1 for _ in self.find_images(src))
@@ -203,10 +211,12 @@ class MogrifyResizer(_ImageMagicResizer):
         if not capture:
             sp.run(args=args, check=False)
         else:
-            for line in track(sequence=self._mogrify(args),
-                              total=images_count,
-                              console=console,
-                              transient=True):
+            for line in track(
+                sequence=self._mogrify(args),
+                total=images_count,
+                console=console,
+                transient=True,
+            ):
                 logger.debug(line)
 
         ss = sum(x.stat().st_size for x in src.glob('*'))
@@ -216,8 +226,15 @@ class MogrifyResizer(_ImageMagicResizer):
         return ds < ss
 
 
-def _resize(src: Path, dst: Path, subdir: Path, resizer: _ImageMagicResizer,
-            size: int, prefix_original: bool, capture: bool):
+def _resize(
+    src: Path,
+    dst: Path,
+    subdir: Path,
+    resizer: _ImageMagicResizer,
+    size: int,
+    prefix_original: bool,
+    capture: bool,
+):
     logger.info('Target="{}"', subdir.name)
     if not any(True for _ in resizer.find_images(subdir)):
         raise NoImagesError(subdir)
@@ -246,15 +263,17 @@ def _resize(src: Path, dst: Path, subdir: Path, resizer: _ImageMagicResizer,
     return reduced
 
 
-def resize(src: StrPath,
-           dst: StrPath | None = None,
-           size=2000,
-           ext: str | None = None,
-           resize_filter='Mitchell',
-           option: str | None = None,
-           batch=True,
-           capture=True,
-           prefix_original=True):
+def resize(
+    src: StrPath,
+    dst: StrPath | None = None,
+    size=2000,
+    ext: str | None = None,
+    resize_filter='Mitchell',
+    option: str | None = None,
+    batch=True,
+    capture=True,
+    prefix_original=True,
+):
     if not batch and dst is None:
         raise ValueError('batch 모드가 아닌 경우 dst를 지정해야 합니다.')
 
@@ -266,24 +285,29 @@ def resize(src: StrPath,
     else:
         subdirs = [src]
 
-    resizer = MogrifyResizer(ext=ext,
-                             resize_filter=resize_filter,
-                             option=option)
+    resizer = MogrifyResizer(ext=ext, resize_filter=resize_filter, option=option)
 
     logger.info('SRC="{}"', src)
     logger.info('DST="{}"', dst)
-    logger.info('size={!r} | ext={!r} | filter={!r} | option={!r}', size, ext,
-                resize_filter, option)
+    logger.info(
+        'size={!r} | ext={!r} | filter={!r} | option={!r}',
+        size,
+        ext,
+        resize_filter,
+        option,
+    )
 
     for subdir in subdirs:
         try:
-            _resize(src=src,
-                    dst=dst,
-                    subdir=subdir,
-                    resizer=resizer,
-                    size=size,
-                    prefix_original=prefix_original,
-                    capture=capture)
+            _resize(
+                src=src,
+                dst=dst,
+                subdir=subdir,
+                resizer=resizer,
+                size=size,
+                prefix_original=prefix_original,
+                capture=capture,
+            )
         except ResizedDirectoryError:
             pass
         except NoImagesError as e:

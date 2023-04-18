@@ -86,8 +86,7 @@ def _visualize(df: pd.DataFrame, path, subset='SizeMB', viz_style='bar'):
 
 
 def _author_size(df: pd.DataFrame):
-    file_size: pd.DataFrame = (
-        df.groupby('author')['SizeMB'].sum().round(2).to_frame())
+    file_size: pd.DataFrame = df.groupby('author')['SizeMB'].sum().round(2).to_frame()
     count: pd.DataFrame = df.groupby('author').size().to_frame(name='Count')
 
     file_size = file_size.join(count)
@@ -104,31 +103,33 @@ def author_size(path, viz, drop_na=True):
     logger.info('File="{}"', path)
 
     # 파읽 불러오기
-    if 'WizTree' in path.name:
-        df = read_wiztree(path)
+    if 'WizTree' in path.name:  # noqa: SIM108
+        size = read_wiztree(path)
     else:
-        df = read_du(path)
+        size = read_du(path)
 
-    df = df.sort_values(by='SizeMB', ascending=False)
+    size = size.sort_values(by='SizeMB', ascending=False)
 
     # 개별 파일 크기별로 정리
     logger.info('Files by size')
-    print_df(df.head(10))
-    _visualize(df=df,
-               path=root.joinpath('Comics-Book-Size.html'),
-               viz_style=viz)
+    print_df(size.head(10))
+    _visualize(df=size, path=root.joinpath('Comics-Book-Size.html'), viz_style=viz)
 
     # 작가 크기/개수별 정리
-    df_author = _author_size(
-        df=(df.loc[df['author'] != 'N／A'] if drop_na else df))
-    df_author = df_author.sort_values(by='SizeMB', ascending=False)
+    if drop_na:
+        size = size.loc[size['author'] != 'N／A']  # noqa: RUF001
+    size_author = _author_size(df=size).sort_values(by='SizeMB', ascending=False)
 
-    print_df(df_author.head(10).reset_index())
-    _visualize(df=df_author,
-               path=root.joinpath('Comics-Author-Size.html'),
-               subset='SizeMB',
-               viz_style=viz)
-    _visualize(df=df_author,
-               path=root.joinpath('Comics-Author-Count.html'),
-               subset='Count',
-               viz_style=viz)
+    print_df(size_author.head(10).reset_index())
+    _visualize(
+        df=size_author,
+        path=root.joinpath('Comics-Author-Size.html'),
+        subset='SizeMB',
+        viz_style=viz,
+    )
+    _visualize(
+        df=size_author,
+        path=root.joinpath('Comics-Author-Count.html'),
+        subset='Count',
+        viz_style=viz,
+    )

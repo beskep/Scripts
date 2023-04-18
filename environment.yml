@@ -10,8 +10,7 @@ dependencies:
     - loguru
     - click
     # dev
-    - yapf
-    - toml
+    - pyink
     - isort
     - pylint
     - mypy
