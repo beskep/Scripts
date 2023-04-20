@@ -1,10 +1,10 @@
 import click
 from loguru import logger
 
+from scripts import utils
 from scripts.author_size import author_size as _size
 from scripts.image_resize import resize as _resize
 from scripts.remove_duplicate import remove_duplicate as _duplicate
-from scripts.utils import WindowsMessage, set_logger
 
 # ruff: noqa: PLR0913
 
@@ -15,26 +15,18 @@ sd = {'show_default': True}
 @click.group()
 @click.option('--debug', '-d', is_flag=True)
 @click.option('--loglevel', '-l', default=20)
-@click.option(
-    '--notification',
-    '-n',
-    type=click.Choice(['none', 'sound', 'msgbox']),
-    default='sound',
-)
-def cli(debug, loglevel, notification):
-    set_logger(level=min((10 if debug else 20), loglevel))
+@click.pass_context
+def cli(ctx: click.Context, debug, loglevel):
+    ctx.max_content_width = max(80, int(20 * round(utils.console.width / 20)))
+    utils.set_logger(level=min((10 if debug else 20), loglevel))
 
 
 @cli.result_callback()
-def notification(*args, **kwargs):
-    n = kwargs['notification']
-
-    if n == 'sound':
-        WindowsMessage.msg_beep()
-    elif n == 'msgbox':
-        WindowsMessage.msg_box(message='Done', title='scripts')
-
-    logger.info('Done')
+@click.pass_context
+def notification(ctx: click.Context, *_, **__):
+    notifier = utils.WindowsNotifier()
+    notifier.send(title='Completed', message=f'Command: {ctx.invoked_subcommand}')
+    logger.info('Completed')
 
 
 class RH:

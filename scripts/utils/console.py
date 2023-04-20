@@ -1,7 +1,3 @@
-import ctypes
-import winsound
-from os import PathLike
-
 import pandas as pd
 from loguru import logger
 from rich.console import Console
@@ -9,8 +5,6 @@ from rich.highlighter import ReprHighlighter
 from rich.logging import RichHandler
 from rich.table import Table
 from rich.theme import Theme
-
-StrPath = str | PathLike
 
 
 class CustomHighlighter(ReprHighlighter):
@@ -58,42 +52,24 @@ def set_logger(level: int | str = 20):
         setattr(logger, 'lvl', level)
 
 
-def file_size_unit(size: float, suffix='B'):
-    k = 1024.0
-    for unit in ['', 'K', 'M', 'G', 'T', 'P', 'E', 'Z']:
-        if abs(size) < k:
-            return size, f'{unit}{suffix}'
-
-        size /= k
-
-    return size, f'Y{suffix}'
-
-
-def file_size_string(size: float, suffix='B'):
-    size, unit = file_size_unit(size=size, suffix=suffix)
-    return f'{size:.2f} {unit}'
-
-
 def df_table(
     df: pd.DataFrame,
     table: Table | None = None,
-    show_index=True,
+    index=True,
     index_name: str | None = None,
 ) -> Table:
     if table is None:
         table = Table()
 
-    if show_index:
+    if index:
         index_name = str(index_name) if index_name else ''
         table.add_column(index_name)
 
     for column in df.columns:
         table.add_column(str(column))
 
-    for index, value_list in enumerate(df.to_numpy().tolist()):
-        row = [str(index)] if show_index else []
-        row += [str(x) for x in value_list]
-        table.add_row(*row)
+    for row in df.itertuples(index=index):
+        table.add_row(*map(str, row))
 
     return table
 
@@ -101,22 +77,8 @@ def df_table(
 def print_df(
     df: pd.DataFrame,
     table: Table | None = None,
-    show_index=True,
+    index=True,
     index_name: str | None = None,
 ):
-    table = df_table(df=df, table=table, show_index=show_index, index_name=index_name)
+    table = df_table(df=df, table=table, index=index, index_name=index_name)
     console.print(table)
-
-
-class WindowsMessage:
-    WS_EX_TOPMOST = 0x40000
-
-    @staticmethod
-    def msg_beep(ok=True):
-        if hasattr(winsound, 'MessageBeep'):
-            t = winsound.MB_OK if ok else winsound.MB_ICONHAND
-            winsound.MessageBeep(t)
-
-    @classmethod
-    def msg_box(cls, message: str, title: str | None = None):
-        ctypes.windll.user32.MessageBoxExW(None, message, title, cls.WS_EX_TOPMOST)

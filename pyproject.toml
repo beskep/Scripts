@@ -6,6 +6,7 @@ profile = 'black'
 
 [tool.ruff]
 select = ['E', 'F', 'W', 'C90', 'N', 'RET', 'SIM', 'ERA', 'PD', 'PL', 'RUF']
+per-file-ignores = { '__init__.py' = ['F401'] }
 
 [tool.pylint.messages_control]
 enable = [
