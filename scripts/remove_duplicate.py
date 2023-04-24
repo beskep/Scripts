@@ -12,7 +12,7 @@ def _suffix(value: str):
 
 class DuplicateCleaner:
 
-    def __init__(self, keep='webp', remove: tuple[str] | None = None) -> None:
+    def __init__(self, keep='webp', remove: Iterable[str] | None = None) -> None:
         self._keep = _suffix(keep)
         self._remove = tuple(_suffix(x) for x in remove) if remove else ()
 
@@ -47,14 +47,14 @@ def remove_duplicate(
     src: StrPath,
     batch=True,
     keep: str = 'webp',
-    remove: tuple[str] | None = None,
+    remove: Iterable[str] | None = None,
 ):
     src = Path(src)
 
-    if batch:
-        subdirs: Iterable = (x for x in src.iterdir() if x.is_dir())
-    else:
-        subdirs = [src]
+    subdirs = [x for x in src.iterdir() if x.is_dir()] if batch else [src]
+    if not subdirs:
+        logger.warning('No subdirs in "{}"', str(src))
+        return
 
     cleaner = DuplicateCleaner(keep=keep, remove=remove)
 

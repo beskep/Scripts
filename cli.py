@@ -1,5 +1,11 @@
-import click
+from enum import Enum
+from pathlib import Path
+from typing import Optional
+
+import typer
+from click.globals import get_current_context
 from loguru import logger
+from typer import Argument, Option
 
 from scripts import utils
 from scripts.author_size import author_size as _size
@@ -8,55 +14,54 @@ from scripts.remove_duplicate import remove_duplicate as _duplicate
 
 # ruff: noqa: PLR0913
 
-_dir = click.Path(exists=True, file_okay=False)
-sd = {'show_default': True}
+
+def callback(
+    debug: bool = Option(False, '--debug', rich_help_panel='Log level'),
+    loglevel: int = Option(20, '--loglevel', '-l', rich_help_panel='Log level'),
+):
+    loglevel = min(10 if debug else 20, loglevel)
+    utils.set_logger(level=loglevel)
 
 
-@click.group()
-@click.option('--debug', '-d', is_flag=True)
-@click.option('--loglevel', '-l', default=20)
-@click.pass_context
-def cli(ctx: click.Context, debug, loglevel):
-    ctx.max_content_width = max(80, int(20 * round(utils.console.width / 20)))
-    utils.set_logger(level=min((10 if debug else 20), loglevel))
+def result_callback(*args, **kwargs):
+    ctx = get_current_context()
+    subcommand = ctx.invoked_subcommand
 
-
-@cli.result_callback()
-@click.pass_context
-def notification(ctx: click.Context, *_, **__):
     notifier = utils.WindowsNotifier()
-    notifier.send(title='Completed', message=f'Command: {ctx.invoked_subcommand}')
-    logger.info('Completed')
+    notifier.send(title='Completed', message=f'Command: {subcommand}')
+    logger.info('Completed {}', subcommand)
+
+
+app = typer.Typer(callback=callback, result_callback=result_callback)
 
 
 class RH:
+    SRC = 'Source directory'
+    DST = 'Destination directory'
     SIZE = 'Pixel size of smallest fitting dimension. `0` for original size.'
-    PO = '`[ORIGINAL]` prefix when dst is not set. [default]'
-    PR = '`[RESIZED]` prefix when dst is not set.'
+    OPTION = 'Additional options for ImageMagick.'
+    PREFIX = 'Prefix of directory when `dst` is not set.'
     BATCH = 'Resize multiple directories.'
     CAPTURE = 'Capture ImageMagick output.'
 
 
-@cli.command()
-@click.option('--size', '-s', default=2000, **sd, help=RH.SIZE)
-@click.option('--ext', '-e', help='Output image extension.')
-@click.option('--resize-filter', '-f', default='Mitchell', **sd)
-@click.option('--option', type=str, help='Additional options')
-@click.option(
-    '--prefix-original',
-    '-o',
-    'prefix',
-    flag_value='original',
-    default=True,
-    help=RH.PO,
-)
-@click.option('--prefix-resized', '-r', 'prefix', flag_value='resized', help=RH.PR)
-@click.option('--batch/--no-batch', default=True, **sd, help=RH.BATCH)
-@click.option('--capture/--no-capture', default=True, **sd, help=RH.CAPTURE)
-@click.argument('src', type=_dir)
-@click.argument('dst', required=False)
-def resize(size, ext, resize_filter, option, prefix, batch, capture, src, dst):
-    """batch resize images/comics"""
+class Prefix(Enum):
+    original = 'original'
+    resized = 'resized'
+
+
+@app.command()
+def resize(
+    src: Path = Argument(..., help=RH.SRC, exists=True, file_okay=False),
+    dst: Optional[Path] = Argument(None, help=RH.DST, exists=True, file_okay=False),
+    size: Optional[int] = Option(2000, '--size', '-s', help=RH.SIZE),
+    ext: str = Option('webp', '--ext', '-e', help='Output image extension.'),
+    resize_filter: str = Option('Mitchell', '--resize-filter', '-f'),
+    prefix: Prefix = Option('original', help=RH.PREFIX),
+    batch: bool = Option(True, help=RH.BATCH),
+    capture: bool = Option(True, help=RH.CAPTURE),
+    option: Optional[str] = Option(None, help=RH.OPTION),
+):
     _resize(
         src=src,
         dst=dst,
@@ -66,27 +71,35 @@ def resize(size, ext, resize_filter, option, prefix, batch, capture, src, dst):
         option=option,
         batch=batch,
         capture=capture,
-        prefix_original=(prefix == 'original'),
+        prefix_original=prefix is prefix.original,
     )
 
 
-@cli.command()
-@click.option('--keep', default='webp', **sd, help='Suffix of files to keep.')
-@click.option('--remove', multiple=True, help='Suffixes of duplicate files to remove.')
-@click.option('--batch/--no-batch', default=True, **sd)
-@click.argument('src', type=_dir)
-def duplicate(keep, remove, batch, src):
+@app.command()
+def duplicate(
+    src: Path = Argument(..., exists=True, file_okay=False),
+    keep: str = Option('webp', help='Suffix of files to keep.'),
+    remove: Optional[list[str]] = Option(
+        None, help='Suffixes of duplicate files to remove.'
+    ),
+    batch: bool = Option(True),
+):
     _duplicate(src=src, batch=batch, keep=keep, remove=remove)
 
 
-@cli.command()
-@click.option('--viz', default='bar', type=click.Choice(['bar', 'gradient']), **sd)
-@click.option('--na/--no-na', **sd, help='Drop N/A')
-@click.argument('path', required=False)
-def size(viz, na, path):
-    _size(path=path, viz=viz, drop_na=(not na))
+class Visualization(Enum):
+    bar = 'bar'
+    gradient = 'gradient'
+
+
+@app.command()
+def size(
+    path: Optional[Path] = Argument(None, exists=True),
+    viz: Visualization = Option('bar'),
+    na: bool = Option(True, '--na/--drop-na', help='Drop N/A'),
+):
+    _size(path=path, viz=viz, drop_na=not na)
 
 
 if __name__ == '__main__':
-    # pylint: disable=no-value-for-parameter
-    cli()
+    app()

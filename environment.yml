@@ -1,14 +1,13 @@
 name: scripts
 channels:
     - conda-forge
-    - defaults
 dependencies:
-    - python>=3.11
+    - python
     - pandas
     - jinja2
     - rich
     - loguru
-    - click
+    - typer>=0.7
     # dev
     - pyink
     - isort
