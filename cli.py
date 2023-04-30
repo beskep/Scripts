@@ -9,6 +9,7 @@ from typer import Argument, Option
 
 from scripts import utils
 from scripts.author_size import author_size as _size
+from scripts.count_archive import count_archive_files as _count
 from scripts.image_resize import resize as _resize
 from scripts.remove_duplicate import remove_duplicate as _duplicate
 
@@ -99,6 +100,15 @@ def size(
     na: bool = Option(True, '--na/--drop-na', help='Drop N/A'),
 ):
     _size(path=path, viz=viz, drop_na=not na)
+
+
+@app.command()
+def count(
+    path=Argument(..., show_default=False, exists=True),
+    classify: bool = Option(False),
+    threshold: int = Option(100, '--threshold', '-t'),
+):
+    _count(path=path, classify=classify, threshold=threshold)
 
 
 if __name__ == '__main__':
