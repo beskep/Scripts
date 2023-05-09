@@ -13,7 +13,7 @@ from scripts.count_archive import count_archive_files as _count
 from scripts.image_resize import resize as _resize
 from scripts.remove_duplicate import remove_duplicate as _duplicate
 
-# ruff: noqa: PLR0913
+# ruff: noqa: B008, UP007, PLR0913
 
 
 def callback(

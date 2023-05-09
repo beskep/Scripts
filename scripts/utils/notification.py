@@ -1,21 +1,20 @@
-"""from https://github.com/ms7m/notify-py"""
+"""from https://github.com/ms7m/notify-py."""
+
 import codecs
-import ctypes
 import subprocess as sp
 import tempfile
 import uuid
-import winsound
 from xml.etree import ElementTree
 
 
 class WindowsNotifier:
     PS1 = """\
-[Windows.UI.Notifications.ToastNotificationManager, \
-Windows.UI.Notifications, ContentType = WindowsRuntime] | Out-Null
-[Windows.UI.Notifications.ToastNotification, \
-Windows.UI.Notifications, ContentType = WindowsRuntime] | Out-Null
-[Windows.Data.Xml.Dom.XmlDocument, \
-Windows.Data.Xml.Dom.XmlDocument, ContentType = WindowsRuntime] | Out-Null
+[Windows.UI.Notifications.ToastNotificationManager,\
+ Windows.UI.Notifications, ContentType = WindowsRuntime] | Out-Null
+[Windows.UI.Notifications.ToastNotification,\
+ Windows.UI.Notifications, ContentType = WindowsRuntime] | Out-Null
+[Windows.Data.Xml.Dom.XmlDocument,\
+ Windows.Data.Xml.Dom.XmlDocument, ContentType = WindowsRuntime] | Out-Null
 $APP_ID = '{app_id}'
 
 $template = @'
@@ -100,17 +99,3 @@ $toast = New-Object Windows.UI.Notifications.ToastNotification $xml
             startupinfo = sp.STARTUPINFO()
             startupinfo.dwFlags |= sp.STARTF_USESHOWWINDOW
             sp.check_output(args, cwd=temp_dir, startupinfo=startupinfo)
-
-
-class WindowsMessage:
-    WS_EX_TOPMOST = 0x40000
-
-    @staticmethod
-    def msg_beep(ok=True):
-        if hasattr(winsound, 'MessageBeep'):
-            t = winsound.MB_OK if ok else winsound.MB_ICONHAND
-            winsound.MessageBeep(t)
-
-    @classmethod
-    def msg_box(cls, message: str, title: str | None = None):
-        ctypes.windll.user32.MessageBoxExW(None, message, title, cls.WS_EX_TOPMOST)

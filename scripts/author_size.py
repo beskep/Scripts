@@ -29,7 +29,7 @@ def read_du(file):
 def read_wiztree(file):
     dd: defaultdict[str, list[None | str | float]] = defaultdict(list)
 
-    with open(file, 'r', encoding='utf-8') as f:
+    with open(file, encoding='UTF-8') as f:
         for line in f:
             cols = line.replace('"', '').split(',')
             p = Path(cols[0])

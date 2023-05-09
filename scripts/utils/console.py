@@ -38,18 +38,15 @@ def set_logger(level: int | str = 20):
         except KeyError as e:
             raise KeyError(f'`{level}` not in {list(_LEVELS.keys())}') from e
 
-    if getattr(logger, 'lvl', -1) != level:
-        logger.remove()
-        logger.add(_handler, level=level, format='{message}', backtrace=False)
-        logger.add(
-            'script.log',
-            level=min(20, level),
-            rotation='1 month',
-            retention='1 year',
-            encoding='UTF-8-SIG',
-        )
-
-        setattr(logger, 'lvl', level)
+    logger.remove()
+    logger.add(_handler, level=level, format='{message}', backtrace=False)
+    logger.add(
+        'script.log',
+        level=min(20, level),
+        rotation='1 month',
+        retention='1 year',
+        encoding='UTF-8-SIG',
+    )
 
 
 def df_table(

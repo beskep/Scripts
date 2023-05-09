@@ -5,24 +5,15 @@ pyink-use-majority-quotes = true
 profile = 'black'
 
 [tool.ruff]
-select = ['E', 'F', 'W', 'C90', 'N', 'RET', 'SIM', 'ERA', 'PD', 'PL', 'RUF']
+select = ['F', 'E', 'W', 'C90', 'N', 'D', 'UP', 'B', 'C4', 'RET', 'SIM', 'ERA', 'PD', 'PL', 'RUF']
+ignore = ['D100', 'D101', 'D102', 'D103', 'D104', 'D105', 'D106', 'D107']
 per-file-ignores = { '__init__.py' = ['F401'] }
 
+[tool.ruff.pydocstyle]
+convention = 'numpy'
+
 [tool.pylint.messages_control]
-enable = [
-    'F',
-    'E',
-    'anomalous-backslash-in-string',
-    'bad-format-string',
-    'bad-open-mode',
-    'binary-op-exception',
-    'duplicate-key',
-    'global-variable-not-assigned',
-    'unnecessary-semicolon',
-    'unreachable',
-]
 disable = [
-    'c-extension-no-member',
     'fixme',
     'import-error',
     'invalid-name',
@@ -30,7 +21,6 @@ disable = [
     'missing-function-docstring',
     'missing-module-docstring',
     'redefined-outer-name',
-    'superfluous-parens',
     'too-few-public-methods',
     'too-many-arguments',
     'trailing-whitespace',
