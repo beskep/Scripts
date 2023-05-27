@@ -26,10 +26,10 @@ def read_du(file):
     return df
 
 
-def read_wiztree(file):
+def read_wiztree(file: Path):
     dd: defaultdict[str, list[None | str | float]] = defaultdict(list)
 
-    with open(file, encoding='UTF-8') as f:
+    with file.open(encoding='UTF-8') as f:
         for line in f:
             cols = line.replace('"', '').split(',')
             p = Path(cols[0])
@@ -53,7 +53,8 @@ def find_wiztree_file(root: Path | None):
 
     files = list(root.glob('WizTree*'))
     if not files:
-        raise FileNotFoundError('Target file not found')
+        msg = 'Target file not found'
+        raise FileNotFoundError(msg)
 
     files.sort(key=lambda x: -x.stat().st_mtime)
 
@@ -80,7 +81,8 @@ def _visualize(df: pd.DataFrame, path, subset='SizeMB', viz_style='bar'):
     elif viz_style == 'gradient':
         viz = df_vis.style.background_gradient(subset=subset)
     else:
-        raise ValueError(f'{viz_style} not in ("bar", "gradient")')
+        msg = f'{viz_style} not in ("bar", "gradient")'
+        raise ValueError(msg)
 
     viz.to_html(path)
 
@@ -96,7 +98,7 @@ def _author_size(df: pd.DataFrame):
     return file_size
 
 
-def author_size(path, viz, drop_na=True):
+def author_size(path, viz, *, drop_na=True):
     # 대상 파일 찾기
     path = find_file(path)
     root = path.parent

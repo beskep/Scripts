@@ -36,7 +36,8 @@ def set_logger(level: int | str = 20):
         try:
             level = _LEVELS[level.upper()]
         except KeyError as e:
-            raise KeyError(f'`{level}` not in {list(_LEVELS.keys())}') from e
+            msg = f'`{level}` not in {list(_LEVELS.keys())}'
+            raise KeyError(msg) from e
 
     logger.remove()
     logger.add(_handler, level=level, format='{message}', backtrace=False)
@@ -52,6 +53,7 @@ def set_logger(level: int | str = 20):
 def df_table(
     df: pd.DataFrame,
     table: Table | None = None,
+    *,
     index=True,
     index_name: str | None = None,
 ) -> Table:
@@ -74,6 +76,7 @@ def df_table(
 def print_df(
     df: pd.DataFrame,
     table: Table | None = None,
+    *,
     index=True,
     index_name: str | None = None,
 ):

@@ -3,8 +3,6 @@ from pathlib import Path
 
 from loguru import logger
 
-from .utils import StrPath
-
 
 def _suffix(value: str):
     return value if value.startswith('.') else f'.{value}'
@@ -44,7 +42,8 @@ class DuplicateCleaner:
 
 
 def remove_duplicate(
-    src: StrPath,
+    src: str | Path,
+    *,
     batch=True,
     keep: str = 'webp',
     remove: Iterable[str] | None = None,

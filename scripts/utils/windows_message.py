@@ -6,7 +6,7 @@ class WindowsMessage:
     WS_EX_TOPMOST = 0x40000
 
     @staticmethod
-    def msg_beep(ok=True):
+    def msg_beep(*, ok=True):
         if hasattr(winsound, 'MessageBeep'):
             t = winsound.MB_OK if ok else winsound.MB_ICONHAND
             winsound.MessageBeep(t)

@@ -1,8 +1,3 @@
-from os import PathLike
-
-StrPath = str | PathLike
-
-
 def file_size_unit(size: float, suffix='B'):
     k = 1024.0
     for unit in ['', 'K', 'M', 'G', 'T', 'P', 'E', 'Z']:

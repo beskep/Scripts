@@ -5,10 +5,7 @@ from string import whitespace
 
 from loguru import logger
 
-from scripts.utils import StrPath
-
 RAR = r'C:\Program Files\WinRAR\Rar.exe'
-
 BZ_COUNT = re.compile(r'.* (\d+) files, (\d+) folders')
 
 
@@ -21,7 +18,7 @@ class BzMatchError(ValueError):
         return '"bz l" 결과 형식 오류'
 
 
-def count_rar(path: StrPath, rar: StrPath | None = None):
+def count_rar(path: str | Path, rar: str | Path | None = None):
     rar = rar or RAR
     args = [str(rar), 'lb', str(path)]
     output = sp.check_output(args)
@@ -34,12 +31,12 @@ def count_rar(path: StrPath, rar: StrPath | None = None):
     return sum(1 for x in lines.splitlines() if Path(x).suffix)
 
 
-def count_bz(path: StrPath, bz: StrPath | None = None):
+def count_bz(path: str | Path, bz: str | Path | None = None):
     if bz is None:
         bz = 'bz'
         bzp = sp.check_output('where bz').decode().rstrip(whitespace)
         if not Path(bzp).exists():
-            raise FileNotFoundError('bz')
+            raise FileNotFoundError(bz)
 
     args = [str(bz), 'l', str(path)]
     output = sp.check_output(args, encoding='UTF-8')
@@ -51,7 +48,7 @@ def count_bz(path: StrPath, bz: StrPath | None = None):
     raise BzMatchError(output)
 
 
-def _files_dir(path: StrPath):
+def _files_dir(path: str | Path):
     path = Path(path)
 
     if path.is_dir():
@@ -77,7 +74,7 @@ def _comparison(count: int, threshold: int):
     return f'{symbol} {threshold}', f'{text}{threshold}'
 
 
-def count_archive_files(path: StrPath, classify=False, threshold=100):
+def count_archive_files(path: str | Path, *, classify=False, threshold=100):
     files, directory = _files_dir(path)
 
     if not files:

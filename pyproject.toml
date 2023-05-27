@@ -1,12 +1,27 @@
 [tool.pyink]
 pyink-use-majority-quotes = true
+preview = true
 
 [tool.isort]
 profile = 'black'
 
 [tool.ruff]
-select = ['F', 'E', 'W', 'C90', 'N', 'D', 'UP', 'B', 'C4', 'RET', 'SIM', 'ERA', 'PD', 'PL', 'RUF']
-ignore = ['D100', 'D101', 'D102', 'D103', 'D104', 'D105', 'D106', 'D107']
+select = ['ALL']
+ignore = [
+    'ANN',
+    'COM',
+    'D100',
+    'D101',
+    'D102',
+    'D103',
+    'D104',
+    'D105',
+    'D106',
+    'D107',
+    'Q',
+    'S101',
+    'S603',
+]
 per-file-ignores = { '__init__.py' = ['F401'] }
 
 [tool.ruff.pydocstyle]

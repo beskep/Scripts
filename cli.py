@@ -13,10 +13,11 @@ from scripts.count_archive import count_archive_files as _count
 from scripts.image_resize import resize as _resize
 from scripts.remove_duplicate import remove_duplicate as _duplicate
 
-# ruff: noqa: B008, UP007, PLR0913
+# ruff: noqa: B008 UP007 PLR0913 FBT003
 
 
 def callback(
+    *,
     debug: bool = Option(False, '--debug', rich_help_panel='Log level'),
     loglevel: int = Option(20, '--loglevel', '-l', rich_help_panel='Log level'),
 ):
@@ -24,7 +25,7 @@ def callback(
     utils.set_logger(level=loglevel)
 
 
-def result_callback(*args, **kwargs):
+def result_callback(*_args, **_kwargs):
     ctx = get_current_context()
     subcommand = ctx.invoked_subcommand
 
@@ -53,6 +54,7 @@ class Prefix(Enum):
 
 @app.command()
 def resize(
+    *,
     src: Path = Argument(..., help=RH.SRC, exists=True, file_okay=False),
     dst: Optional[Path] = Argument(None, help=RH.DST, exists=True, file_okay=False),
     size: Optional[int] = Option(2000, '--size', '-s', help=RH.SIZE),
@@ -78,6 +80,7 @@ def resize(
 
 @app.command()
 def duplicate(
+    *,
     src: Path = Argument(..., exists=True, file_okay=False),
     keep: str = Option('webp', help='Suffix of files to keep.'),
     remove: Optional[list[str]] = Option(
@@ -95,6 +98,7 @@ class Visualization(Enum):
 
 @app.command()
 def size(
+    *,
     path: Optional[Path] = Argument(None, exists=True),
     viz: Visualization = Option('bar'),
     na: bool = Option(True, '--na/--drop-na', help='Drop N/A'),
@@ -104,6 +108,7 @@ def size(
 
 @app.command()
 def count(
+    *,
     path=Argument(..., show_default=False, exists=True),
     classify: bool = Option(False),
     threshold: int = Option(100, '--threshold', '-t'),
