@@ -35,6 +35,7 @@ def result_callback(*_args, **_kwargs):
 
 
 app = typer.Typer(callback=callback, result_callback=result_callback)
+_dir: dict = {'show_default': False, 'exists': True, 'file_okay': False}
 
 
 class RH:
@@ -55,8 +56,8 @@ class Prefix(Enum):
 @app.command()
 def resize(
     *,
-    src: Path = Argument(..., help=RH.SRC, exists=True, file_okay=False),
-    dst: Optional[Path] = Argument(None, help=RH.DST, exists=True, file_okay=False),
+    src: Path = Argument(..., help=RH.SRC, **_dir),
+    dst: Optional[Path] = Argument(None, help=RH.DST, **_dir),
     size: Optional[int] = Option(2000, '--size', '-s', help=RH.SIZE),
     ext: str = Option('webp', '--ext', '-e', help='Output image extension.'),
     resize_filter: str = Option('Mitchell', '--resize-filter', '-f'),
@@ -81,7 +82,7 @@ def resize(
 @app.command()
 def duplicate(
     *,
-    src: Path = Argument(..., exists=True, file_okay=False),
+    src: Path = Argument(..., **_dir),
     keep: str = Option('webp', help='Suffix of files to keep.'),
     remove: Optional[list[str]] = Option(
         None, help='Suffixes of duplicate files to remove.'
