@@ -103,7 +103,7 @@ def size(
     viz: Visualization = Option('bar'),
     na: bool = Option(True, '--na/--drop-na', help='Drop N/A'),
 ):
-    _size(path=path, viz=viz, drop_na=not na)
+    _size(path=path, viz=viz.value, drop_na=not na)
 
 
 @app.command()
