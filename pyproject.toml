@@ -7,25 +7,8 @@ profile = 'black'
 
 [tool.ruff]
 select = ['ALL']
-ignore = [
-    'ANN',
-    'COM',
-    'D100',
-    'D101',
-    'D102',
-    'D103',
-    'D104',
-    'D105',
-    'D106',
-    'D107',
-    'Q',
-    'S101',
-    'S603',
-]
+ignore = ['ANN', 'COM', 'D', 'PD901', 'Q', 'S101', 'S603']
 per-file-ignores = { '__init__.py' = ['F401'] }
-
-[tool.ruff.pydocstyle]
-convention = 'numpy'
 
 [tool.pylint.messages_control]
 disable = [

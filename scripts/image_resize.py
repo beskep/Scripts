@@ -6,7 +6,7 @@ from pathlib import Path
 from loguru import logger
 from rich.progress import track
 
-from .utils import console, file_size_unit
+from scripts.utils import console, file_size_unit
 
 # ruff: noqa: PLR0913
 
