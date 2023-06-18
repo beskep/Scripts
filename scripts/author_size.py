@@ -1,12 +1,11 @@
 import re
-from collections import defaultdict
 from pathlib import Path
 
 import pandas as pd
 from loguru import logger
 
-from .utils import RichDataFrame, console
-from .utils import file_size_string as fss
+from scripts.utils import RichDataFrame, console
+from scripts.utils import file_size_string as fss
 
 p_author = re.compile(r'^\[.*\((.*?)\)].*')
 
@@ -18,7 +17,7 @@ def detect_author(file_name: str) -> str | None:
 
 
 def read_du(file):
-    df: pd.DataFrame = pd.read_csv(file)
+    df = pd.read_csv(file)
     df['name'] = [Path(x).name for x in df['Path']]
     df['author'] = [detect_author(x) for x in df['name']]
     df['SizeMB'] = (df['DirectorySize'] / 1e6).round(2)
@@ -27,24 +26,20 @@ def read_du(file):
 
 
 def read_wiztree(file: Path):
-    dd: defaultdict[str, list[None | str | float]] = defaultdict(list)
+    raw = pd.read_csv(file, skiprows=1, encoding='UTF-8')
 
-    with file.open(encoding='UTF-8') as f, console.status('Reading WizTree...'):
-        for line in f:
-            cols = line.replace('"', '').split(',')
-            p = Path(cols[0])
+    df = raw.iloc[:, [0, 1]]
+    df.columns = ['path', 'size']
 
-            if not (p.is_dir() or p.suffix.lower() in ('.rar', '.zip')):
-                continue
+    # dir only
+    df = df.loc[df['path'].str.endswith('\\')]
+    df = df.loc[~df['path'].str.endswith('_downloaded\\')]
 
-            if '_downloaded' in p.name:
-                continue
+    df['name'] = [Path(x).name for x in df['path']]
+    df['author'] = [detect_author(x) for x in df['name']]
+    df['SizeMB'] = (df['size'] / 1e6).round(2)
 
-            dd['author'].append(detect_author(p.name))
-            dd['SizeMB'].append(round(float(cols[1]) / 1e6, 2))
-            dd['name'].append(p.name)
-
-    return pd.DataFrame(dd)
+    return df[['name', 'author', 'SizeMB']].reset_index(drop=True)
 
 
 def find_wiztree_file(root: Path | None):
