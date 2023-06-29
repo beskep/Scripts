@@ -4,23 +4,22 @@ from pathlib import Path
 import pandas as pd
 from loguru import logger
 
-from scripts.utils import RichDataFrame, console
-from scripts.utils import file_size_string as fss
+from scripts.utils import RichDataFrame as RichDF
+from scripts.utils import bytes_str, console
 
-p_author = re.compile(r'^\[.*\((.*?)\)].*')
+_M = 2**20
+_author = re.compile(r'^\[.*\((.*?)\)].*')
 
 
 def detect_author(file_name: str) -> str | None:
-    m = p_author.match(file_name)
-
-    return None if m is None else m.group(1)
+    return None if (m := _author.match(file_name)) is None else m.group(1)
 
 
 def read_du(file):
     df = pd.read_csv(file)
     df['name'] = [Path(x).name for x in df['Path']]
     df['author'] = [detect_author(x) for x in df['name']]
-    df['SizeMB'] = (df['DirectorySize'] / 1e6).round(2)
+    df['SizeMB'] = (df['DirectorySize'] / _M).round(2)
 
     return df
 
@@ -37,7 +36,7 @@ def read_wiztree(file: Path):
 
     df['name'] = [Path(x).name for x in df['path']]
     df['author'] = [detect_author(x) for x in df['name']]
-    df['SizeMB'] = (df['size'] / 1e6).round(2)
+    df['SizeMB'] = (df['size'] / _M).round(2)
 
     return df[['name', 'author', 'SizeMB']].reset_index(drop=True)
 
@@ -86,14 +85,23 @@ class HtmlViz:
 
         match cls.VIZ:
             case 'bar':
-                viz = dfs.style.bar(subset=subset)
+                styler = dfs.style.bar(subset=subset)
             case 'gradient':
-                viz = dfs.style.background_gradient(subset=subset)
+                styler = dfs.style.background_gradient(subset=subset)
             case _:
                 msg = f'{cls.VIZ!r} not in ("bar", "gradient")'
                 raise ValueError(msg)
 
-        return viz.to_html()
+        styler = (
+            styler.format({'SizeMB': '{:.2f}'})
+            .set_table_styles([{'selector': 'td, th', 'props': 'padding: 0 10px;'}])
+            .set_table_styles(
+                {'Size': [{'selector': '', 'props': [('text-align', 'right')]}]},
+                overwrite=False,
+            )
+        )
+
+        return styler.to_html()
 
     @classmethod
     def write_df(cls, path: Path, df: pd.DataFrame, subset='SizeMB'):
@@ -117,10 +125,8 @@ def _author_size(df: pd.DataFrame):
     count = df.groupby('author').size().to_frame(name='Count')
 
     file_size = file_size.join(count)
-    file_size['Size'] = [fss(x * 1e6) for x in file_size['SizeMB']]
-    file_size = file_size[['SizeMB', 'Size', 'Count']]
-
-    return file_size
+    file_size['Size'] = [bytes_str(x * _M) for x in file_size['SizeMB']]
+    return file_size[['SizeMB', 'Size', 'Count']]
 
 
 def author_size(path, *, viz, drop_na=True):
@@ -136,8 +142,8 @@ def author_size(path, *, viz, drop_na=True):
     size = size.sort_values(by='SizeMB', ascending=False)
 
     # 개별 파일 크기별로 정리
-    console.print('Files by size')
-    RichDataFrame.print(size)
+    console.print('Files by size', style='blue')
+    RichDF.print(size)
     HtmlViz.write_df(path=root / 'Comics-Book.html', df=size, subset='SizeMB')
 
     # 작가 크기/개수별 정리
@@ -146,8 +152,8 @@ def author_size(path, *, viz, drop_na=True):
 
     size_author = _author_size(df=size).sort_values(by='SizeMB', ascending=False)
 
-    console.print('\nAuthors by size')
-    RichDataFrame.print(size_author.reset_index())
+    console.print('\nAuthors by size', style='blue')
+    RichDF.print(size_author.reset_index())
     HtmlViz.write_dfs(
         path=root / 'Comics-Author.html',
         df=size_author,

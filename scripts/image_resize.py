@@ -2,11 +2,12 @@ import subprocess as sp
 from abc import ABC, abstractmethod
 from collections.abc import Iterable
 from pathlib import Path
+from typing import ClassVar
 
 from loguru import logger
 from rich.progress import track
 
-from scripts.utils import console, file_size_unit
+from scripts.utils import bytes_unit, console
 
 # ruff: noqa: PLR0913
 
@@ -44,12 +45,23 @@ def _size_arg(size: int):
 
 
 def _fs(size: float):
-    s, u = file_size_unit(size)
+    s, u = bytes_unit(size)
     return f'{s: 6.1f} {u}'
 
 
 class _ImageMagicResizer(ABC):
-    IMG_EXTS = {'.jpg', '.jpeg', '.png', '.bmp', '.gif', '.tiff', '.webp'}
+    IMG_EXTS: ClassVar[set[str]] = {
+        '.apng',
+        '.avif',
+        '.bmp',
+        '.gif',
+        '.jpeg',
+        '.jpg',
+        '.jxl',
+        '.png',
+        '.tiff',
+        '.webp',
+    }
 
     def __init__(
         self,
