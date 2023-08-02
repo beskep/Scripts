@@ -1,3 +1,5 @@
+# ruff: noqa: PLR0913
+
 import subprocess as sp
 from abc import ABC, abstractmethod
 from collections.abc import Iterable
@@ -7,9 +9,7 @@ from typing import ClassVar
 from loguru import logger
 from rich.progress import track
 
-from scripts.utils import bytes_unit, console
-
-# ruff: noqa: PLR0913
+from scripts.utils import FileSize, console
 
 
 class ResizedDirectoryError(ValueError):
@@ -44,9 +44,9 @@ def _size_arg(size: int):
     return '100%' if size == 0 else f'{size}x{size}'
 
 
-def _fs(size: float):
-    s, u = bytes_unit(size)
-    return f'{s: 6.1f} {u}'
+def _bytes(size: float):
+    fs = FileSize(size)
+    return f'{fs.size: 6.1f} {fs.unit}'
 
 
 class _ImageMagicResizer(ABC):
@@ -120,8 +120,8 @@ class _ImageMagicResizer(ABC):
         logger.log(
             level,
             'File Size {ss} -> {ds} ({r:6.1%}) | {msg}',
-            ss=_fs(ss),
-            ds=_fs(ds),
+            ss=_bytes(ss),
+            ds=_bytes(ds),
             r=ds / ss,
             msg=msg,
         )
@@ -327,7 +327,7 @@ def resize(
                 prefix_original=prefix_original,
                 capture=capture,
             )
-        except ResizedDirectoryError:
+        except ResizedDirectoryError:  # noqa: PERF203
             pass
         except NoImagesError as e:
             logger.warning(str(e))

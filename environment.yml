@@ -3,6 +3,7 @@ channels:
     - conda-forge
 dependencies:
     - python
+    - polars
     - pandas
     - jinja2
     - rich

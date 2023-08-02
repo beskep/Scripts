@@ -84,18 +84,18 @@ def count_archive_files(path: str | Path, *, classify=False, threshold=100):
     if len(files) == 1:
         classify = False
 
-    for file in files:
-        try:
+    try:
+        for file in files:
             nf, nd = count_bz(file)
-        except BzMatchError as e:
-            logger.error('{}:\n{}', e, e.args[0])
-            raise
+            cs, ct = _comparison(nf, threshold)
+            logger.info('files={:03d} {} | dirs={:02d} | {}', nf, cs, nd, file.name)
 
-        cs, ct = _comparison(nf, threshold)
-        logger.info('files={:03d} {} | dirs={:02d} | {}', nf, cs, nd, file.name)
+            if classify:
+                dst = directory / ct
+                dst.mkdir(exist_ok=True)
 
-        if classify:
-            dst = directory / ct
-            dst.mkdir(exist_ok=True)
+                file.rename(dst / file.name)
 
-            file.rename(dst / file.name)
+    except BzMatchError as e:
+        logger.error('{}:\n{}', e, e.args[0])
+        raise

@@ -1,11 +1,7 @@
-import numpy as np
-import pandas as pd
 from loguru import logger
-from rich import box
 from rich.console import Console
 from rich.highlighter import ReprHighlighter
 from rich.logging import RichHandler
-from rich.table import Table
 from rich.theme import Theme
 
 
@@ -50,55 +46,3 @@ def set_logger(level: int | str = 20):
         retention='1 year',
         encoding='UTF-8-SIG',
     )
-
-
-class RichDataFrame:
-    BOX = box.SQUARE_DOUBLE_HEAD
-    INDEX = True
-    MIN_COL_WIDTH = 4
-
-    COLLAPSE = True
-    MAX_ROW = 20
-    ELLIPSIS_STYLE = 'live.ellipsis'
-
-    @classmethod
-    def collapse(cls, df: pd.DataFrame):
-        return cls.COLLAPSE and len(df.index) > cls.MAX_ROW
-
-    @classmethod
-    def _justify(cls, dtype):
-        numeric = np.issubdtype(dtype, np.number)
-        return 'right' if numeric else 'left'
-
-    @classmethod
-    def table(cls, df: pd.DataFrame, table: Table | None = None):
-        if table is None:
-            table = Table(box=cls.BOX)
-
-        if cls.INDEX:
-            table.add_column(justify=cls._justify(df.index.dtype))
-
-        dtypes = df.dtypes
-        for column in df.columns:
-            table.add_column(
-                str(column),
-                justify=cls._justify(dtypes[column]),
-                min_width=cls.MIN_COL_WIDTH,
-            )
-
-        collapse = cls.collapse(df)
-        for row in (df.head() if collapse else df).itertuples(index=cls.INDEX):
-            table.add_row(*map(str, row))
-
-        if collapse:
-            table.add_row(*['...' for _ in table.columns], style=cls.ELLIPSIS_STYLE)
-
-            for row in df.tail().itertuples(index=cls.INDEX):
-                table.add_row(*map(str, row))
-
-        return table
-
-    @classmethod
-    def print(cls, df: pd.DataFrame, table: Table | None = None):  # noqa: A003
-        table = cls.table(df=df, table=table)
-        console.print(table)

@@ -1,3 +1,5 @@
+# ruff: noqa: B008 UP007 PLR0913 FBT003
+
 from enum import Enum
 from pathlib import Path
 from typing import Optional
@@ -12,8 +14,6 @@ from scripts.author_size import author_size as _size
 from scripts.count_archive import count_archive_files as _count
 from scripts.image_resize import resize as _resize
 from scripts.remove_duplicate import remove_duplicate as _duplicate
-
-# ruff: noqa: B008 UP007 PLR0913 FBT003
 
 
 def callback(
@@ -102,7 +102,7 @@ def size(
     *,
     path: Optional[Path] = Argument(None, exists=True),
     viz: Visualization = Option('bar'),
-    na: bool = Option(True, '--na/--drop-na', help='Drop N/A'),
+    na: bool = Option(False, '--na/--drop-na', help='Drop N/A'),
 ):
     _size(path=path, viz=viz.value, drop_na=not na)
 
