@@ -1,7 +1,7 @@
+import os
 import re
 import subprocess as sp
 from pathlib import Path
-from string import whitespace
 
 from loguru import logger
 
@@ -34,9 +34,13 @@ def count_rar(path: str | Path, rar: str | Path | None = None):
 def count_bz(path: str | Path, bz: str | Path | None = None):
     if bz is None:
         bz = 'bz'
-        bzp = sp.check_output('where bz').decode().rstrip(whitespace)
-        if not Path(bzp).exists():
-            raise FileNotFoundError(bz)
+        sr = os.getenv('SYSTEMROOT')
+
+        try:
+            sp.check_output(rf'{sr}\System32\where {bz}')
+        except sp.CalledProcessError as e:
+            logger.error('{}: "{}"', e.__class__.__name__, e.cmd)
+            raise FileNotFoundError(bz) from None
 
     args = [str(bz), 'l', str(path)]
     output = sp.check_output(args, encoding='UTF-8')

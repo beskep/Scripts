@@ -7,8 +7,14 @@ profile = 'black'
 
 [tool.ruff]
 select = ['ALL']
-ignore = ['ANN', 'COM', 'D', 'PD901', 'Q', 'S101', 'S603']
-per-file-ignores = { '__init__.py' = ['F401'] }
+ignore = ['ANN', 'COM', 'D', 'PD901', 'S101', 'S603']
+ignore-init-module-imports = true
+
+[tool.ruff.flake8-bugbear]
+extend-immutable-calls = ['typer.Argument', 'typer.Option']
+
+[tool.ruff.flake8-quotes]
+inline-quotes = 'single'
 
 [tool.pylint.messages_control]
 disable = [
