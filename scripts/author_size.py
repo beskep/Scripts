@@ -154,7 +154,7 @@ def author_size(path: Path | None, *, viz: Viz = 'bar', drop_na=True):
     if 'WizTree' not in path.name:
         logger.warning('대상이 WizTree 파일이 아닐 수 있음: "{}"', path)
 
-    # 파읽 불러오기
+    # 파일 불러오기
     dfs = read_wiztree(path)
 
     # 개별 파일 크기별로 정리
