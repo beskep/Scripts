@@ -1,4 +1,4 @@
-# ruff: noqa: B008 UP007 PLR0913 FBT003
+# ruff: noqa: UP007 PLR0913 FBT003
 
 from enum import Enum
 from pathlib import Path
