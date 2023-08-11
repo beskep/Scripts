@@ -13,7 +13,7 @@ pl.Config.set_tbl_dataframe_shape_below()
 pl.Config.set_tbl_hide_column_data_types()
 pl.Config.set_fmt_str_lengths(console.width // 2)
 
-_author = re.compile(r'^\[.*\((.*?)\)].*')
+_author = re.compile(r'^\[.*\((.*?)\)]')
 
 
 def detect_author(file_name: str) -> str | None:
@@ -57,9 +57,9 @@ def read_wiztree(path: str | Path):
     return (
         pl.scan_csv(path, skip_rows=1)
         .rename({'파일 이름': 'path', '크기': 'size'})
-        .filter(
-            Expr.path.str.ends_with('\\') & ~Expr.path.str.ends_with('_downloaded\\')
-        )
+        .with_columns(pl.col('path').str.lengths().alias('pl'))
+        .filter(pl.col('pl') != pl.col('pl').min())  # filter root dir
+        .filter(Expr.path.str.extract(r'(([^\]]\\)|(\.((rar)|(zip))))$') != '')
         .select(Expr.alias_name, Expr.size, Expr.alias_megabyte, Expr.alias_humanize)
         .with_columns(Expr.alias_author)
         .sort('size', descending=True)
@@ -87,9 +87,11 @@ class HtmlViz:
     @classmethod
     def to_html(cls, df: pd.DataFrame | pl.DataFrame, subset: str):
         if isinstance(df, pl.DataFrame):
-            df = pd.DataFrame(df.to_dict(as_series=False))
-
-        df = df.sort_values(subset, ascending=False)
+            df = pd.DataFrame(
+                df.sort(subset, descending=True)
+                .fill_null('[null]')
+                .to_dict(as_series=False)
+            )
 
         match cls.VIZ:
             case 'bar':
