@@ -10,7 +10,7 @@ class CustomHighlighter(ReprHighlighter):
     highlights.append(r'(?P<vb>\|)')
 
 
-theme = Theme({'logging.level.success': 'blue', 'repr.vb': 'bold'})
+theme = Theme({'logging.level.success': 'blue', 'repr.vb': 'bold blue'})
 console = Console(theme=theme)
 _handler = RichHandler(
     console=console,

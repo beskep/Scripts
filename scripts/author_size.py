@@ -1,4 +1,3 @@
-import re
 from collections.abc import Iterable
 from pathlib import Path
 from typing import Literal
@@ -12,12 +11,6 @@ from scripts.utils import FileSize, console
 pl.Config.set_tbl_dataframe_shape_below()
 pl.Config.set_tbl_hide_column_data_types()
 pl.Config.set_fmt_str_lengths(console.width // 2)
-
-_author = re.compile(r'^\[.*\((.*?)\)]')
-
-
-def detect_author(file_name: str) -> str | None:
-    return None if (m := _author.match(file_name)) is None else m.group(1)
 
 
 def find_wiztree(root: Path | None):
@@ -48,9 +41,11 @@ class Expr:
     _MEBI = 2**20
 
     alias_name = path.apply(lambda x: Path(x).name).alias('name')
-    alias_author = name.apply(detect_author).alias('author')
+    alias_author = name.str.extract(r'^\[.*\((.*?)\)]').alias('author')
     alias_megabyte = size.truediv(_MEBI).round(2).alias(MEGABYTE)
     alias_humanize = size.apply(_bytes, return_dtype=pl.Utf8).alias(READABLE)
+
+    dir_or_archive = path.str.extract(r'(([^\]]\\)|(\.((rar)|(zip))))$').is_not_null()
 
 
 def read_wiztree(path: str | Path):
@@ -59,11 +54,16 @@ def read_wiztree(path: str | Path):
         .rename({'파일 이름': 'path', '크기': 'size'})
         .with_columns(pl.col('path').str.lengths().alias('pl'))
         .filter(pl.col('pl') != pl.col('pl').min())  # filter root dir
-        .filter(Expr.path.str.extract(r'(([^\]]\\)|(\.((rar)|(zip))))$') != '')
-        .select(Expr.alias_name, Expr.size, Expr.alias_megabyte, Expr.alias_humanize)
-        .with_columns(Expr.alias_author)
+        .filter(Expr.dir_or_archive)
+        .with_columns(Expr.alias_name)
+        .select(
+            Expr.name,
+            Expr.alias_author,
+            Expr.size,
+            Expr.alias_megabyte,
+            Expr.alias_humanize,
+        )
         .sort('size', descending=True)
-        .select(['name', 'author', 'size', Expr.MEGABYTE, Expr.READABLE])
         .collect()
     )
 
