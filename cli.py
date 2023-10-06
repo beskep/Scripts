@@ -6,6 +6,7 @@ from typing import Optional
 
 import typer
 from click.globals import get_current_context
+from ffmpeg_normalize import FFmpegNormalize
 from loguru import logger
 from typer import Argument, Option
 
@@ -115,6 +116,37 @@ def count(
     threshold: int = Option(100, '--threshold', '-t'),
 ):
     _count(path=path, classify=classify, threshold=threshold)
+
+
+class AudioCodec(Enum):
+    libopus = 'libopus'
+    aac = 'aac'
+
+
+@app.command()
+def loudnorm(
+    *,
+    src: Path = Argument(..., show_default=False, exists=True),
+    dst: Optional[Path] = Argument(None, show_default=True),
+    codec: AudioCodec = Option('libopus', show_default=True),
+    ext: str = Option('mkv', '--ext', '-e'),
+    progress: bool = Option(default=True),
+):
+    if dst is None:
+        dst = src.with_name(f'{src.stem}-loudnorm.{ext}')
+
+    if dst.exists():
+        raise FileExistsError(dst)
+
+    logger.info('src="{}"', src)
+    logger.info('dst="{}"', dst)
+
+    normalize = FFmpegNormalize(audio_codec=codec.value, progress=progress)
+    normalize.add_media_file(str(src), str(dst))
+    normalize.run_normalization()
+
+    if s := normalize.stats:
+        utils.cnsl.print(s)
 
 
 if __name__ == '__main__':

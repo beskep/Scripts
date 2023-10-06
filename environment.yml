@@ -1,17 +1,18 @@
 name: scripts
 channels:
-    - conda-forge
+  - conda-forge
 dependencies:
-    - python
-    - polars
-    - pandas
-    - jinja2
-    - rich
-    - loguru
-    - typer>=0.7
-    # dev
-    - pyink
-    - isort
-    - pylint
-    - mypy
-    - ruff
+  - python
+  - polars
+  - pandas
+  - jinja2
+  - ffmpeg-normalize
+  - rich
+  - loguru
+  - typer>=0.7
+  # dev
+  - pyink
+  - isort
+  - pylint
+  - mypy
+  - ruff

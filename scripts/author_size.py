@@ -6,11 +6,11 @@ import pandas as pd
 import polars as pl
 from loguru import logger
 
-from scripts.utils import FileSize, console
+from scripts.utils import FileSize, cnsl
 
 pl.Config.set_tbl_dataframe_shape_below()
 pl.Config.set_tbl_hide_column_data_types()
-pl.Config.set_fmt_str_lengths(console.width // 2)
+pl.Config.set_fmt_str_lengths(cnsl.width // 2)
 
 
 def find_wiztree(root: Path | None):
@@ -160,8 +160,8 @@ def author_size(path: Path | None, *, viz: Viz = 'bar', drop_na=True):
     dfs = read_wiztree(path)
 
     # 개별 파일 크기별로 정리
-    console.print('Files by size:', style='blue bold')
-    console.print(dfs.drop('size'))
+    cnsl.print('Files by size:', style='blue bold')
+    cnsl.print(dfs.drop('size'))
     HtmlViz.write_df(
         path=root / 'Comics-Book.html',
         df=dfs,
@@ -173,8 +173,8 @@ def author_size(path: Path | None, *, viz: Viz = 'bar', drop_na=True):
         dfs = dfs.filter(pl.col('author') != 'N／A')  # noqa: RUF001
 
     dfa = _author_size(dfs)
-    console.print('\nAuthors by size:', style='blue bold')
-    console.print(dfa.drop('size'))
+    cnsl.print('\nAuthors by size:', style='blue bold')
+    cnsl.print(dfa.drop('size'))
     HtmlViz.write_dfs(
         path=root / 'Comics-Author.html',
         df=dfa,

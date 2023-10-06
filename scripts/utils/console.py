@@ -11,9 +11,9 @@ class CustomHighlighter(ReprHighlighter):
 
 
 theme = Theme({'logging.level.success': 'blue', 'repr.vb': 'bold blue'})
-console = Console(theme=theme)
+cnsl = Console(theme=theme)
 _handler = RichHandler(
-    console=console,
+    console=cnsl,
     highlighter=CustomHighlighter(),
     markup=True,
     log_time_format='[%X]',

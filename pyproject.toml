@@ -6,8 +6,10 @@ preview = true
 profile = 'black'
 
 [tool.ruff]
+target-version = 'py311'
+preview = true
 select = ['ALL']
-ignore = ['ANN', 'COM', 'D', 'PD901', 'S101', 'S603']
+ignore = ['ANN', 'COM', 'CPY', 'E226', 'D', 'PD', 'S101', 'S603']
 ignore-init-module-imports = true
 
 [tool.ruff.flake8-bugbear]

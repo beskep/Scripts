@@ -9,7 +9,7 @@ from typing import ClassVar
 from loguru import logger
 from rich.progress import track
 
-from scripts.utils import FileSize, console
+from scripts.utils import FileSize, cnsl
 
 
 class ResizedDirectoryError(ValueError):
@@ -163,7 +163,7 @@ class ConvertResizer(_ImageMagicResizer):
 
         ss, ds = 0, 0
         size_arg = _size_arg(size)
-        for image in track(images, console=console, transient=True):
+        for image in track(images, console=cnsl, transient=True):
             resized = dst.joinpath(image.name)
             if self._format:
                 resized = resized.with_suffix(f'.{self._format}')
@@ -230,7 +230,7 @@ class MogrifyResizer(_ImageMagicResizer):
             for line in track(
                 sequence=self._mogrify(args),
                 total=images_count,
-                console=console,
+                console=cnsl,
                 transient=True,
             ):
                 logger.debug(line)
@@ -327,7 +327,7 @@ def resize(
                 prefix_original=prefix_original,
                 capture=capture,
             )
-        except ResizedDirectoryError:  # noqa: PERF203
+        except ResizedDirectoryError:
             pass
         except NoImagesError as e:
             logger.warning(str(e))
