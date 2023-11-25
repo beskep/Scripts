@@ -10,7 +10,6 @@ BZ_COUNT = re.compile(r'.* (\d+) files, (\d+) folders')
 
 
 class BzMatchError(ValueError):
-
     def __init__(self, *args: object) -> None:
         super().__init__(*args)
 

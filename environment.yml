@@ -11,8 +11,7 @@ dependencies:
   - loguru
   - typer>=0.7
   # dev
-  - pyink
-  - isort
   - pylint
   - mypy
   - ruff
+  - typos

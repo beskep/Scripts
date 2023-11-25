@@ -91,10 +91,10 @@ $toast = New-Object Windows.UI.Notifications.ToastNotification $xml
         with tempfile.TemporaryDirectory() as temp_dir:
             filename = f'{uuid.uuid4()}.ps1'
 
-            with codecs.open(f'{temp_dir}/{filename}', 'w', 'UTF-8-SIG') as f:
+            with codecs.open(f'{temp_dir}/{filename}', 'w', encoding='UTF-8-SIG') as f:
                 f.write(xml)
 
-            # exceute the file
+            # execute the file
             args = ['Powershell', '-ExecutionPolicy', 'Bypass', '-File', filename]
             startupinfo = sp.STARTUPINFO()
             startupinfo.dwFlags |= sp.STARTF_USESHOWWINDOW

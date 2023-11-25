@@ -9,7 +9,6 @@ def _suffix(value: str):
 
 
 class DuplicateCleaner:
-
     def __init__(self, keep='webp', remove: Iterable[str] | None = None) -> None:
         self._keep = _suffix(keep)
         self._remove = tuple(_suffix(x) for x in remove) if remove else ()

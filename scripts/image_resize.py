@@ -17,7 +17,6 @@ class ResizedDirectoryError(ValueError):
 
 
 class NoImagesError(FileNotFoundError):
-
     def __init__(self, path, message='No images in "{}"') -> None:
         self.path = path
         self.message = message.format(path)
@@ -128,7 +127,6 @@ class _ImageMagicResizer(ABC):
 
 
 class ConvertResizer(_ImageMagicResizer):
-
     def __init__(
         self,
         path: str | Path | None = None,
@@ -181,7 +179,6 @@ class ConvertResizer(_ImageMagicResizer):
 
 
 class MogrifyResizer(_ImageMagicResizer):
-
     def __init__(
         self,
         path: str | Path | None = None,
