@@ -8,10 +8,6 @@ from loguru import logger
 
 from scripts.utils import FileSize, cnsl
 
-pl.Config.set_tbl_dataframe_shape_below()
-pl.Config.set_tbl_hide_column_data_types()
-pl.Config.set_fmt_str_lengths(cnsl.width // 2)
-
 
 def find_wiztree(root: Path | None):
     if root is None:
@@ -145,6 +141,11 @@ def _author_size(df: pl.DataFrame):
     )
 
 
+@pl.Config(
+    set_tbl_dataframe_shape_below=True,
+    set_tbl_hide_column_data_types=True,
+    set_fmt_str_lengths=cnsl.width // 2,
+)
 def author_size(path: Path | None, *, viz: Viz = 'bar', drop_na=True):
     HtmlViz.VIZ = viz
 

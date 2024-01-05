@@ -295,11 +295,9 @@ def resize(
 
     src = Path(src)
     dst = src if dst is None else Path(dst)
-
-    if batch:
-        subdirs: Iterable = (x for x in src.iterdir() if x.is_dir())
-    else:
-        subdirs = [src]
+    subdirs: Iterable[Path] = (
+        (x for x in src.iterdir() if x.is_dir()) if batch else [src]
+    )
 
     resizer = MogrifyResizer(ext=ext, resize_filter=resize_filter, option=option)
 
@@ -331,4 +329,4 @@ def resize(
             continue
         except (OSError, RuntimeError, ValueError) as e:
             logger.exception(e)
-            break
+            raise
