@@ -280,11 +280,11 @@ def _resize(
 def resize(
     src: str | Path,
     dst: str | Path | None = None,
+    *,
     size=2000,
     ext: str | None = None,
     resize_filter='Mitchell',
     option: str | None = None,
-    *,
     batch=True,
     capture=True,
     prefix_original=True,

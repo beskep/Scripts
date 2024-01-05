@@ -1,4 +1,4 @@
-from collections.abc import Iterable
+from collections.abc import Collection
 from pathlib import Path
 from typing import Literal
 
@@ -85,7 +85,7 @@ class HtmlViz:
 """
 
     @classmethod
-    def to_html(cls, df: pd.DataFrame | pl.DataFrame, subset: str):
+    def to_html(cls, df: pd.DataFrame | pl.DataFrame, subset: str | Collection[str]):
         if isinstance(df, pl.DataFrame):
             df = pd.DataFrame(
                 df.sort(subset, descending=True)
@@ -123,7 +123,7 @@ class HtmlViz:
         cls,
         path: Path,
         df: pd.DataFrame | pl.DataFrame,
-        subset=Iterable[str],
+        subset: Collection[str],
     ):
         width = 1.0 / len(subset)
         th = ''.join(f'<th style="width: {width:%}">By {x}</th>' for x in subset)

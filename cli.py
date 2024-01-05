@@ -70,7 +70,7 @@ def resize(
     _resize(
         src=src,
         dst=dst,
-        size=size,
+        size=size or 0,
         ext=ext,
         resize_filter=resize_filter,
         option=option,

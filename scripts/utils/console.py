@@ -6,8 +6,7 @@ from rich.theme import Theme
 
 
 class CustomHighlighter(ReprHighlighter):
-    highlights = ReprHighlighter.highlights.copy()
-    highlights.append(r'(?P<vb>\|)')
+    highlights = [*ReprHighlighter.highlights, r'(?P<vb>\|)']  # noqa: RUF012
 
 
 theme = Theme({'logging.level.success': 'blue', 'repr.vb': 'bold blue'})
