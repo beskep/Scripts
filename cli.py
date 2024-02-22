@@ -15,6 +15,7 @@ from scripts.author_size import author_size as _size
 from scripts.count_archive import count_archive_files as _count
 from scripts.image_resize import resize as _resize
 from scripts.remove_duplicate import remove_duplicate as _duplicate
+from scripts.ruff import RuffRules
 
 
 def callback(
@@ -147,6 +148,25 @@ def loudnorm(
 
     if s := normalize.stats:
         utils.cnsl.print(s)
+
+
+class RuffMode(Enum):
+    linter = 'linter'
+    setting = 'setting'
+
+
+@app.command()
+def ruff(
+    *,
+    conf: Optional[Path] = Option(None, show_default=True),
+    mode: RuffMode = Option('setting', show_default=True),
+):
+    rules = RuffRules()
+
+    if mode is RuffMode.linter:
+        rules.print_linters()
+    elif mode is RuffMode.setting:
+        rules.print_settings(conf)
 
 
 if __name__ == '__main__':

@@ -1,33 +1,36 @@
 [project]
 name = 'scripts'
-version = '0.1.0'
+version = '0.2.0'
 requires-python = '>=3.12'
 
 [tool.ruff]
 preview = true
-select = ['ALL']
-ignore = [
-    'ANN',
-    'COM',
-    'CPY',
-    'D',
-    'E1',
-    'E2',
-    'ISC001',
-    'PD901',
-    'PTH123',
-    'Q',
-    'S101',
-    'S603',
-    'TD',
-]
-ignore-init-module-imports = true
+respect-gitignore = false
+output-format = 'concise'
 
 [tool.ruff.format]
 preview = true
 quote-style = 'single'
 
-[tool.ruff.flake8-bugbear]
+[tool.ruff.lint]
+select = ['ALL']
+ignore = [
+    'ANN',    # flake8-annotations
+    'COM',    # flake8-commas
+    'CPY',    # flake8-copyright
+    'D',      # pydocstyle
+    'E1',     # pycodestyle: E1*
+    'E2',     # pycodestyle: E2*
+    'ISC001', # flake8-implicit-str-concat: single-line-implicit-string-concatenation
+    'PD901',  # pandas-vet: pandas-df-variable-name
+    'PTH123', # flake8-use-pathlib: builtin-open
+    'Q',      # flake8-quotes
+    'S',      # flake8-bandit
+    'TD',     # flake8-todos
+]
+ignore-init-module-imports = true
+
+[tool.ruff.lint.flake8-bugbear]
 extend-immutable-calls = ['typer.Argument', 'typer.Option']
 
 [tool.pylint.messages_control]

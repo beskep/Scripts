@@ -9,7 +9,7 @@ from typing import ClassVar
 from loguru import logger
 from rich.progress import track
 
-from scripts.utils import FileSize, cnsl
+from scripts.utils import FileSize
 
 
 class ResizedDirectoryError(ValueError):
@@ -110,9 +110,9 @@ class _ImageMagicResizer(ABC):
         scaled = sum(1 for x in ratio if x > 0)
         total = len(ratio)
 
-        msg = f'Scaled Images {scaled:>3d}/{total:>3d}={scaled/total:4.0%}'
+        msg = f'Scaled Images {scaled:>3d}/{total:>3d}={scaled / total:4.0%}'
         if scaled:
-            msg = f'{msg} (avg ratio {sum(ratio)/total:5.1%})'
+            msg = f'{msg} (avg ratio {sum(ratio) / total:5.1%})'
         else:
             msg = f'{msg} [red italic](NOT scaled)[/]'
 
@@ -155,13 +155,12 @@ class ConvertResizer(_ImageMagicResizer):
         return sp.run(args, capture_output=capture, check=False)
 
     def resize(self, src: Path, dst: Path, size: int, *, capture=True):
-        images = sorted(self.find_images(src))
-        if not images:
+        if not (images := sorted(self.find_images(src))):
             raise NoImagesError(src)
 
         ss, ds = 0, 0
         size_arg = _size_arg(size)
-        for image in track(images, console=cnsl, transient=True):
+        for image in track(images, transient=True):
             resized = dst.joinpath(image.name)
             if self._format:
                 resized = resized.with_suffix(f'.{self._format}')
@@ -217,8 +216,7 @@ class MogrifyResizer(_ImageMagicResizer):
         )
         logger.debug(args)
 
-        images_count = sum(1 for _ in self.find_images(src))
-        if not images_count:
+        if not (total := sum(1 for _ in self.find_images(src))):
             raise NoImagesError(src)
 
         if not capture:
@@ -226,8 +224,7 @@ class MogrifyResizer(_ImageMagicResizer):
         else:
             for line in track(
                 sequence=self._mogrify(args),
-                total=images_count,
-                console=cnsl,
+                total=total,
                 transient=True,
             ):
                 logger.debug(line)
@@ -295,9 +292,11 @@ def resize(
 
     src = Path(src)
     dst = src if dst is None else Path(dst)
-    subdirs: Iterable[Path] = (
-        (x for x in src.iterdir() if x.is_dir()) if batch else [src]
-    )
+
+    if batch:
+        subdirs: Iterable[Path] = (x for x in src.iterdir() if x.is_dir())
+    else:
+        subdirs = [src]
 
     resizer = MogrifyResizer(ext=ext, resize_filter=resize_filter, option=option)
 
@@ -329,4 +328,4 @@ def resize(
             continue
         except (OSError, RuntimeError, ValueError) as e:
             logger.exception(e)
-            raise
+            break
