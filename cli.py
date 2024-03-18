@@ -43,7 +43,10 @@ _dir: dict = {'show_default': False, 'exists': True, 'file_okay': False}
 class RH:
     SRC = 'Source directory'
     DST = 'Destination directory'
+    FORMAT = 'Output image extension.'
     SIZE = 'Pixel size of smallest fitting dimension. `0` for original size.'
+    FILTER = 'Resizing Filter'
+    QUALITY = 'Image compression level'
     OPTION = 'Additional options for ImageMagick.'
     PREFIX = 'Prefix of directory when `dst` is not set.'
     BATCH = 'Resize multiple directories.'
@@ -60,9 +63,10 @@ def resize(
     *,
     src: Path = Argument(..., help=RH.SRC, **_dir),
     dst: Optional[Path] = Argument(None, help=RH.DST, **_dir),
-    size: Optional[int] = Option(2000, '--size', '-s', help=RH.SIZE),
-    ext: str = Option('webp', '--ext', '-e', help='Output image extension.'),
-    resize_filter: str = Option('Mitchell', '--resize-filter', '-f'),
+    format: str = Option('webp', '--format', '-f', help=RH.FORMAT),  # noqa: A002
+    size: int = Option(0, '--size', '-s', help=RH.SIZE),
+    filter: str = Option('Mitchell', '--filter', help=RH.FILTER),  # noqa: A002
+    quality: Optional[int] = Option(None, '--quality', '-q', help=RH.QUALITY),
     prefix: Prefix = Option('original', help=RH.PREFIX),
     batch: bool = Option(True, help=RH.BATCH),
     capture: bool = Option(True, help=RH.CAPTURE),
@@ -71,13 +75,14 @@ def resize(
     _resize(
         src=src,
         dst=dst,
-        size=size or 0,
-        ext=ext,
-        resize_filter=resize_filter,
+        format=format,
+        size=size,
+        filter=filter,
+        quality=quality,
         option=option,
         batch=batch,
         capture=capture,
-        prefix_original=prefix is prefix.original,
+        prefix=prefix.value,
     )
 
 

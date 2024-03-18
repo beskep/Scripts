@@ -1,6 +1,6 @@
 [project]
 name = 'scripts'
-version = '0.2.0'
+version = '0.2.1'
 requires-python = '>=3.12'
 
 [tool.ruff]
@@ -34,22 +34,8 @@ ignore-init-module-imports = true
 extend-immutable-calls = ['typer.Argument', 'typer.Option']
 
 [tool.pylint.messages_control]
-disable = [
-    'fixme',
-    'import-error',
-    'invalid-name',
-    'missing-class-docstring',
-    'missing-function-docstring',
-    'missing-module-docstring',
-    'redefined-outer-name',
-    'too-few-public-methods',
-    'too-many-arguments',
-    'trailing-whitespace',
-    'unused-argument',
-    'unused-import',
-    'unused-variable',
-    'wrong-import-order',
-]
+confidence = ['HIGH', 'INFERENCE', 'INFERENCE_FAILURE']
+disable = ['C', 'R', 'I', 'fixme']
 
 [tool.mypy]
 disable_error_code = ['var-annotated', 'import']

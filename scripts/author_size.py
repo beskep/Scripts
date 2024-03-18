@@ -142,7 +142,6 @@ def _author_size(df: pl.DataFrame):
 
 
 @pl.Config(
-    set_tbl_dataframe_shape_below=True,
     set_tbl_hide_column_data_types=True,
     set_fmt_str_lengths=cnsl.width // 2,
 )
