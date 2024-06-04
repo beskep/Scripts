@@ -79,13 +79,15 @@ $toast = New-Object Windows.UI.Notifications.ToastNotification $xml
     def send(
         self,
         title: str,
-        message: str,
+        message: str | None = None,
         app_id: str | None = None,
         icon: str | None = None,
     ):
         app_id = app_id or self._app_id
         icon = icon or self._icon
-        xml = self._generate_xml(title=title, message=message, app_id=app_id, icon=icon)
+        xml = self._generate_xml(
+            title=title, message=message or '', app_id=app_id, icon=icon
+        )
 
         # open the temporary directory
         with tempfile.TemporaryDirectory() as temp_dir:

@@ -1,14 +1,10 @@
-# ruff: noqa: UP007 PLR0913 FBT003
-
-from enum import Enum
 from pathlib import Path
-from typing import Optional
+from typing import Annotated, Literal
 
-import typer
-from click.globals import get_current_context
+import rich
+from cyclopts import App, Group, Parameter
 from ffmpeg_normalize import FFmpegNormalize
 from loguru import logger
-from typer import Argument, Option
 
 from scripts import utils
 from scripts.author_size import author_size as _size
@@ -17,162 +13,157 @@ from scripts.image_resize import resize as _resize
 from scripts.remove_duplicate import remove_duplicate as _duplicate
 from scripts.ruff import RuffRules
 
+app = App(help_format='markdown')
+app.meta.group_parameters = Group('Options', sort_key=0)
 
-def callback(
-    *,
-    debug: bool = Option(False, '--debug', rich_help_panel='Log level'),
-    loglevel: int = Option(20, '--loglevel', '-l', rich_help_panel='Log level'),
+
+@app.meta.default
+def launcher(
+    *tokens: Annotated[str, Parameter(show=False, allow_leading_hyphen=True)],
+    debug: Annotated[bool, Parameter(name=['--debug', '-d'], negative=[])] = False,
 ):
-    loglevel = min(10 if debug else 20, loglevel)
-    utils.set_logger(level=loglevel)
+    utils.set_logger(level=10 if debug else 20)
+
+    app(tokens)
+
+    if tokens:
+        notifier = utils.WindowsNotifier()
+        notifier.send(title=f'Completed {tokens[0]}')
+        logger.info('Completed {}', tokens[0])
 
 
-def result_callback(*_args, **_kwargs):
-    ctx = get_current_context()
-    subcommand = ctx.invoked_subcommand
-
-    notifier = utils.WindowsNotifier()
-    notifier.send(title='Completed', message=f'Command: {subcommand}')
-    logger.info('Completed {}', subcommand)
-
-
-app = typer.Typer(callback=callback, result_callback=result_callback)
-_dir: dict = {'show_default': False, 'exists': True, 'file_okay': False}
-
-
-class RH:
-    SRC = 'Source directory'
-    DST = 'Destination directory'
-    FORMAT = 'Output image extension.'
-    SIZE = 'Pixel size of smallest fitting dimension. `0` for original size.'
-    FILTER = 'Resizing Filter'
-    QUALITY = 'Image compression level'
-    OPTION = 'Additional options for ImageMagick.'
-    PREFIX = 'Prefix of directory when `dst` is not set.'
-    BATCH = 'Resize multiple directories.'
-    CAPTURE = 'Capture ImageMagick output.'
-
-
-class Prefix(Enum):
-    original = 'original'
-    resized = 'resized'
-
-
-@app.command()
-def resize(
+@app.command(group='Images')  # type: ignore[misc]
+def resize(  # noqa: PLR0913
+    src: Path,
+    dst: Path | None = None,
     *,
-    src: Path = Argument(..., help=RH.SRC, **_dir),
-    dst: Optional[Path] = Argument(None, help=RH.DST, **_dir),
-    format: str = Option('webp', '--format', '-f', help=RH.FORMAT),  # noqa: A002
-    size: int = Option(0, '--size', '-s', help=RH.SIZE),
-    filter: str = Option('Mitchell', '--filter', help=RH.FILTER),  # noqa: A002
-    quality: Optional[int] = Option(None, '--quality', '-q', help=RH.QUALITY),
-    prefix: Prefix = Option('original', help=RH.PREFIX),
-    batch: bool = Option(True, help=RH.BATCH),
-    capture: bool = Option(True, help=RH.CAPTURE),
-    option: Optional[str] = Option(None, help=RH.OPTION),
+    format_: Annotated[str, Parameter('--format')] = 'webp',
+    size: int = 0,
+    filter_: Annotated[str, Parameter('--filter')] = 'Mitchell',
+    quality: int | None = None,
+    option: str | None = None,
+    batch: bool = True,
+    prefix: Literal['original', 'resized'] = 'original',
+    capture: bool = True,
 ):
+    """
+    ImageMagick 이용 영상파일 해상도 변환, 압축.
+
+    Parameters
+    ----------
+    src : Path
+        대상 경로.
+    dst : Path | None, optional
+        저장 경로. 미입력 시 `src`와 같은 경로.
+    format_ : Annotated[str, Parameter, optional
+        변환되는 영상 형식. jpg, webp, avif, ...
+    size : int, optional
+        변환되는 영상의 가장 작은 dimension 크기. 0이면 원본 크기 보존.
+    filter_ : Annotated[str, Parameter, optional
+        크기 변환 필터. Mitchell, Hermite, Lanczos, ...
+    quality : int | None, optional
+        영상 품질 (0-100).
+    option : str | None, optional
+        ImageMagick 부가 옵션.
+    batch : bool, optional
+        여러 폴더 일괄 변환.
+    prefix : Literal['original', 'resized'], optional
+        batch 변환 시 prefix를 적용할 대상.
+    capture : bool, optional
+        ImageMagick 출력 캡처.
+    """
     _resize(
         src=src,
         dst=dst,
-        format=format,
+        format=format_,
         size=size,
-        filter=filter,
+        filter=filter_,
         quality=quality,
         option=option,
         batch=batch,
         capture=capture,
-        prefix=prefix.value,
+        prefix=prefix,
     )
 
 
-@app.command()
+@app.command(group='Images')  # type: ignore[misc]
 def duplicate(
+    src: Path,
     *,
-    src: Path = Argument(..., **_dir),
-    keep: str = Option('webp', help='Suffix of files to keep.'),
-    remove: Optional[list[str]] = Option(
-        None, help='Suffixes of duplicate files to remove.'
-    ),
-    batch: bool = Option(True),
+    keep: str = 'webp',
+    remove: list[str] | None = None,
+    batch: bool = True,
 ):
+    """확장자가 다르고 중복된 영상 파일 삭제."""
+    if not src.is_dir():
+        raise NotADirectoryError(src)
+
     _duplicate(src=src, batch=batch, keep=keep, remove=remove)
 
 
-class Visualization(Enum):
-    bar = 'bar'
-    gradient = 'gradient'
-
-
-@app.command()
+@app.command(group='Images')  # type: ignore[misc]
 def size(
+    path: Path | None = None,
     *,
-    path: Optional[Path] = Argument(None, exists=True),
-    viz: Visualization = Option('bar'),
-    na: bool = Option(False, '--na/--drop-na', help='Drop N/A'),
+    viz: Literal['bar', 'gradient'] = 'bar',
+    na: Annotated[bool, Parameter(negative_bool='--drop-')] = False,
 ):
-    _size(path=path, viz=viz.value, drop_na=not na)
+    """폴더, 작가별 용량 및 폴더 개수 시각화."""
+    _size(path=path, viz=viz, drop_na=not na)
 
 
-@app.command()
-def count(
+@app.command
+def count_archive(
+    path: Path,
     *,
-    path=Argument(..., show_default=False, exists=True),
-    classify: bool = Option(False),
-    threshold: int = Option(100, '--threshold', '-t'),
+    classify: bool = False,
+    threshold: int = 100,
 ):
+    """압축파일 내 파일 개수 체크."""
     _count(path=path, classify=classify, threshold=threshold)
 
 
-class AudioCodec(Enum):
-    libopus = 'libopus'
-    aac = 'aac'
-
-
-@app.command()
+@app.command
 def loudnorm(
+    src: Path,
     *,
-    src: Path = Argument(..., show_default=False, exists=True),
-    dst: Optional[Path] = Argument(None, show_default=True),
-    codec: AudioCodec = Option('libopus', show_default=True),
-    ext: str = Option('mkv', '--ext', '-e'),
-    progress: bool = Option(default=True),
+    dst: Path | None = None,
+    codec: Literal['libopus', 'aac'] = 'libopus',
+    ext: str = 'mkv',
+    progress: bool = True,
 ):
-    if dst is None:
-        dst = src.with_name(f'{src.stem}-loudnorm.{ext}')
-
+    """ffmpeg-normalize."""
+    dst = dst or src.with_name(f'{src.stem}-loudnorm.{ext}')
     if dst.exists():
         raise FileExistsError(dst)
 
     logger.info('src="{}"', src)
     logger.info('dst="{}"', dst)
 
-    normalize = FFmpegNormalize(audio_codec=codec.value, progress=progress)
+    normalize = FFmpegNormalize(audio_codec=codec, progress=progress)
     normalize.add_media_file(str(src), str(dst))
     normalize.run_normalization()
 
     if s := normalize.stats:
-        utils.cnsl.print(s)
+        rich.print(s)
 
 
-class RuffMode(Enum):
-    linter = 'linter'
-    setting = 'setting'
-
-
-@app.command()
+@app.command
 def ruff(
     *,
-    conf: Optional[Path] = Option(None, show_default=True),
-    mode: RuffMode = Option('setting', show_default=True),
+    conf: Path | None = None,
+    mode: Literal['linter', 'setting'] = 'setting',
 ):
+    """ruff linter/setting"""
     rules = RuffRules()
 
-    if mode is RuffMode.linter:
+    if mode == 'linter':
         rules.print_linters()
-    elif mode is RuffMode.setting:
+    elif mode == 'setting':
         rules.print_settings(conf)
+    else:
+        raise ValueError(mode)
 
 
 if __name__ == '__main__':
-    app()
+    app.meta()

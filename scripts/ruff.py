@@ -152,3 +152,34 @@ class RuffRules:
 
             for line in self.annotate(key, config[key]):
                 cnsl.print(line)
+
+
+if __name__ == '__main__':
+    import argparse
+
+    parser = argparse.ArgumentParser()
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument(
+        '-s',
+        '--setting',
+        action='store_const',
+        dest='cmd',
+        const='setting',
+        default='setting',
+    )
+    group.add_argument(
+        '-l',
+        '--linter',
+        action='store_const',
+        dest='cmd',
+        const='linter',
+    )
+
+    ruff = RuffRules()
+    match cmd := parser.parse_args().cmd:
+        case 'setting':
+            ruff.print_settings()
+        case 'linter':
+            ruff.print_linters()
+        case _:
+            raise ValueError(cmd)

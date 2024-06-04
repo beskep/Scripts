@@ -1,6 +1,6 @@
 [project]
 name = 'scripts'
-version = '0.2.1'
+version = '0.3.0'
 requires-python = '>=3.12'
 
 [tool.ruff]
@@ -28,14 +28,10 @@ ignore = [
     'S',      # flake8-bandit
     'TD',     # flake8-todos
 ]
-ignore-init-module-imports = true
-
-[tool.ruff.lint.flake8-bugbear]
-extend-immutable-calls = ['typer.Argument', 'typer.Option']
 
 [tool.pylint.messages_control]
 confidence = ['HIGH', 'INFERENCE', 'INFERENCE_FAILURE']
-disable = ['C', 'R', 'I', 'fixme']
+disable = ['C', 'R', 'fixme']
 
 [tool.mypy]
 disable_error_code = ['var-annotated', 'import']

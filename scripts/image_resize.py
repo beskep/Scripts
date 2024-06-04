@@ -270,8 +270,8 @@ def resize(  # noqa: PLR0913
     quality: int | None = None,
     option: str | None = None,
     batch=True,
-    capture=True,
     prefix: Literal['original', 'resized'] = 'original',
+    capture=True,
 ):
     if not batch and dst is None:
         msg = 'batch 모드가 아닌 경우 dst를 지정해야 합니다.'

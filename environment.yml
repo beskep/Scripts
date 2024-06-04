@@ -9,9 +9,9 @@ dependencies:
   - ffmpeg-normalize
   - rich
   - loguru
-  - typer>=0.7
+  - cyclopts
   # dev
-  - pylint
   - mypy
   - ruff
+  - pylint
   - typos

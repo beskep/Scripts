@@ -4,9 +4,12 @@ from typing import Literal
 
 import pandas as pd
 import polars as pl
+import rich
 from loguru import logger
 
-from scripts.utils import FileSize, cnsl
+from scripts.utils import FileSize
+
+cnsl = rich.get_console()
 
 
 def find_wiztree(root: Path | None):
