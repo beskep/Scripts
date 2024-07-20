@@ -1,40 +1,68 @@
 [project]
-name = 'scripts'
-version = '0.3.0'
-requires-python = '>=3.12'
+name = "scripts"
+version = "0.3.0"
+dependencies = [
+    "polars>=1.2.1",
+    "pandas>=2.2.2",
+    "jinja2>=3.1.4",
+    "ffmpeg-normalize>=1.28.2",
+    "rich>=13.7.1",
+    "loguru>=0.7.2",
+    "cyclopts>=2.9.3",
+]
+requires-python = ">=3.12"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.rye]
+managed = true
+dev-dependencies = [
+    "mypy>=1.11.0",
+    "ruff>=0.5.3",
+    "pylint>=3.2.5",
+    "typos>=1.23.2",
+]
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.hatch.build.targets.wheel]
+packages = ["scripts"]
 
 [tool.ruff]
 preview = true
 respect-gitignore = false
-output-format = 'concise'
+output-format = "concise"
 
 [tool.ruff.format]
 preview = true
-quote-style = 'single'
+quote-style = "single"
 
 [tool.ruff.lint]
-select = ['ALL']
+select = ["ALL"]
 ignore = [
-    'ANN',    # flake8-annotations
-    'COM',    # flake8-commas
-    'CPY',    # flake8-copyright
-    'D',      # pydocstyle
-    'E1',     # pycodestyle: E1*
-    'E2',     # pycodestyle: E2*
-    'ISC001', # flake8-implicit-str-concat: single-line-implicit-string-concatenation
-    'PD901',  # pandas-vet: pandas-df-variable-name
-    'PTH123', # flake8-use-pathlib: builtin-open
-    'Q',      # flake8-quotes
-    'S',      # flake8-bandit
-    'TD',     # flake8-todos
+    "ANN",    # flake8-annotations
+    "COM",    # flake8-commas
+    "CPY",    # flake8-copyright
+    "D",      # pydocstyle
+    "E1",     # pycodestyle: E1*
+    "E2",     # pycodestyle: E2*
+    "ISC001", # flake8-implicit-str-concat: single-line-implicit-string-concatenation
+    "PD",     # pandas-vet
+    "PTH123", # flake8-use-pathlib: builtin-open
+    "Q",      # flake8-quotes
+    "S",      # flake8-bandit
+    "TD",     # flake8-todos
 ]
 
 [tool.pylint.messages_control]
-confidence = ['HIGH', 'INFERENCE', 'INFERENCE_FAILURE']
-disable = ['C', 'R', 'fixme']
+confidence = ["HIGH", "INFERENCE", "INFERENCE_FAILURE"]
+disable = ["C", "R", "fixme"]
 
 [tool.mypy]
-disable_error_code = ['var-annotated', 'import']
+disable_error_code = ["var-annotated", "import"]
 check_untyped_defs = true
 warn_unused_ignores = true
 warn_unused_configs = true

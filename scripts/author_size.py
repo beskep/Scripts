@@ -51,7 +51,7 @@ def read_wiztree(path: str | Path):
     return (
         pl.scan_csv(path, skip_rows=1)
         .rename({'파일 이름': 'path', '크기': 'size'})
-        .with_columns(pl.col('path').str.lengths().alias('pl'))
+        .with_columns(pl.col('path').str.len_chars().alias('pl'))
         .filter(pl.col('pl') != pl.col('pl').min())  # filter root dir
         .filter(Expr.dir_or_archive)
         .with_columns(Expr.alias_name)
@@ -137,7 +137,7 @@ class HtmlViz:
 def _author_size(df: pl.DataFrame):
     return (
         df.with_columns(Expr.author.fill_null('NA'))
-        .groupby(Expr.author)
+        .group_by(Expr.author)
         .agg([pl.count('size').alias('count'), pl.sum('size')])
         .with_columns(Expr.alias_megabyte, Expr.alias_humanize)
         .sort('size', descending=True)
