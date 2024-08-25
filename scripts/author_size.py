@@ -13,8 +13,7 @@ cnsl = rich.get_console()
 
 
 def find_wiztree(root: Path | None):
-    if root is None:
-        root = Path()
+    root = root or Path()
 
     if not (files := list(root.glob('WizTree*'))):
         raise FileNotFoundError(root)
@@ -32,19 +31,16 @@ class Expr:
     MEGABYTE = 'Megabyte'
     READABLE = 'HumanReadable'
 
-    path = pl.col('path')
-    name = pl.col('name')
-    author = pl.col('author')
-    size = pl.col('size')
-
     _MEBI = 2**20
 
-    alias_name = path.apply(lambda x: Path(x).name).alias('name')
-    alias_author = name.str.extract(r'^\[.*\((.*?)\)]').alias('author')
-    alias_megabyte = size.truediv(_MEBI).round(2).alias(MEGABYTE)
-    alias_humanize = size.apply(_bytes, return_dtype=pl.Utf8).alias(READABLE)
+    name = pl.col('path').str.extract(r'.*\\(.*)(\\|(\.\w+))').alias('name')
+    author = pl.col('name').str.extract(r'^\[.*\((.*?)\)]').alias('author')
+    megabyte = pl.col('size').truediv(_MEBI).round(2).alias(MEGABYTE)
+    readable = pl.col('size').map_elements(_bytes, return_dtype=pl.Utf8).alias(READABLE)
 
-    dir_or_archive = path.str.extract(r'(([^\]]\\)|(\.((rar)|(zip))))$').is_not_null()
+    dir_or_archive = (
+        pl.col('path').str.extract(r'(([^\]]\\)|(\.((rar)|(zip))))$').is_not_null()
+    )
 
 
 def read_wiztree(path: str | Path):
@@ -54,14 +50,8 @@ def read_wiztree(path: str | Path):
         .with_columns(pl.col('path').str.len_chars().alias('pl'))
         .filter(pl.col('pl') != pl.col('pl').min())  # filter root dir
         .filter(Expr.dir_or_archive)
-        .with_columns(Expr.alias_name)
-        .select(
-            Expr.name,
-            Expr.alias_author,
-            Expr.size,
-            Expr.alias_megabyte,
-            Expr.alias_humanize,
-        )
+        .with_columns(Expr.name)
+        .select('name', Expr.author, 'size', Expr.megabyte, Expr.readable)
         .sort('size', descending=True)
         .collect()
     )
@@ -136,10 +126,10 @@ class HtmlViz:
 
 def _author_size(df: pl.DataFrame):
     return (
-        df.with_columns(Expr.author.fill_null('NA'))
-        .group_by(Expr.author)
-        .agg([pl.count('size').alias('count'), pl.sum('size')])
-        .with_columns(Expr.alias_megabyte, Expr.alias_humanize)
+        df.with_columns(pl.col('author').fill_null('NA'))
+        .group_by('author')
+        .agg(pl.count('size').alias('count'), pl.sum('size'))
+        .with_columns(Expr.megabyte, Expr.readable)
         .sort('size', descending=True)
     )
 
@@ -160,26 +150,26 @@ def author_size(path: Path | None, *, viz: Viz = 'bar', drop_na=True):
         logger.warning('대상이 WizTree 파일이 아닐 수 있음: "{}"', path)
 
     # 파일 불러오기
-    dfs = read_wiztree(path)
+    book = read_wiztree(path)
 
     # 개별 파일 크기별로 정리
     cnsl.print('Files by size:', style='blue bold')
-    cnsl.print(dfs.drop('size'))
+    cnsl.print(book.drop('size'))
     HtmlViz.write_df(
         path=root / 'Comics-Book.html',
-        df=dfs,
+        df=book,
         subset=Expr.MEGABYTE,
     )
 
     # 작가 크기/개수별 정리
     if drop_na:
-        dfs = dfs.filter(pl.col('author') != 'N／A')  # noqa: RUF001
+        book = book.filter(pl.col('author') != 'N／A')  # noqa: RUF001
 
-    dfa = _author_size(dfs)
+    author = _author_size(book)
     cnsl.print('\nAuthors by size:', style='blue bold')
-    cnsl.print(dfa.drop('size'))
+    cnsl.print(author.drop('size'))
     HtmlViz.write_dfs(
         path=root / 'Comics-Author.html',
-        df=dfa,
+        df=author,
         subset=(Expr.MEGABYTE, 'count'),
     )
