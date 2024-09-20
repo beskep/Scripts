@@ -1,36 +1,52 @@
+import dataclasses as dc
+from itertools import repeat
+from typing import ClassVar
+
+
+@dc.dataclass
 class FileSize:
-    B = 'bytes'
-    UNITS = ('K', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y')
+    byte: float
 
-    def __init__(self, size: float, *, binary=True, digits: int | None = 2) -> None:
-        self._bytes = size
-        self._f = f'.{digits}f' if digits else ''
+    _ = dc.KW_ONLY
 
-        self._s, self._u = self.human_readable(size=size, binary=binary)
+    binary: bool = True
+    digits: int | None = 2
+
+    size: float = dc.field(init=False)
+    unit: float = dc.field(init=False)
+
+    _UNITS: ClassVar[tuple[str, ...]] = (
+        'bytes',
+        'K',
+        'M',
+        'G',
+        'T',
+        'P',
+        'E',
+        'Z',
+        'Y',
+    )
+
+    def __post_init__(self):
+        self.size, self.unit = self.human_readable(byte=self.byte, binary=self.binary)
 
     def __str__(self) -> str:
-        return f'{self._s:{self._f}} {self._u}'
-
-    def __repr__(self) -> str:
-        return f'{self.__class__.__name__}({self._bytes})'
-
-    @property
-    def size(self):
-        return self._s
-
-    @property
-    def unit(self):
-        return self._u
+        f = f'.{self.digits}f' if self.digits else ''
+        return f'{self.size:{f}} {self.unit}'
 
     @classmethod
-    def human_readable(cls, size: float, *, binary=True) -> tuple[float, str]:
+    def human_readable(cls, byte: float, *, binary=True) -> tuple[float, str]:
         k = 1024.0 if binary else 1000.0
         suffix = 'iB' if binary else 'B'
 
-        for unit in (cls.B, *cls.UNITS[:-1]):
-            if abs(size) < k:
-                return size, unit if unit == cls.B else f'{unit}{suffix}'
+        for u, s in zip(
+            cls._UNITS[:-1],
+            ('', *repeat(suffix, len(cls._UNITS) - 2)),
+            strict=True,
+        ):
+            if abs(byte) < k:
+                return byte, f'{u}{s}'
 
-            size /= k
+            byte /= k
 
-        return size, f'{cls.UNITS[-1]}{suffix}'
+        return byte, f'{cls._UNITS[-1]}{suffix}'
