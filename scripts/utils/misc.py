@@ -13,7 +13,7 @@ class FileSize:
     digits: int | None = 2
 
     size: float = dc.field(init=False)
-    unit: float = dc.field(init=False)
+    unit: str = dc.field(init=False)
 
     _UNITS: ClassVar[tuple[str, ...]] = (
         'bytes',
