@@ -13,6 +13,7 @@ from scripts.author_size import author_size as _size
 from scripts.count_archive import count_archive_files as _count
 from scripts.image_resize import resize as _resize
 from scripts.remove_duplicate import remove_duplicate as _duplicate
+from scripts.rptl import RenpyTranslation
 from scripts.ruff import RuffRules
 
 app = App(help_format='markdown')
@@ -148,6 +149,21 @@ def loudnorm(
 
     if s := normalize.stats:
         rich.print(s)
+
+
+@app.command
+def rptl(path: Path, language: str = 'Korean'):
+    """
+    Renpy 번역 원문·번역어 동시 출력
+
+    Parameters
+    ----------
+    path : Path
+        게임 경로.
+    language : str, optional
+        번역 대상 언어.
+    """
+    RenpyTranslation(path=path, language=language).execute()
 
 
 @app.command

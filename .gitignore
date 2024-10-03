@@ -75,3 +75,4 @@ dmypy.json
 *.csv
 *.html
 TODO.md
+config.toml

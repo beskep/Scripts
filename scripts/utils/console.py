@@ -3,6 +3,7 @@ from typing import ClassVar
 
 import rich
 from loguru import logger
+from rich import progress
 from rich.highlighter import ReprHighlighter
 from rich.logging import RichHandler
 from rich.theme import Theme
@@ -61,3 +62,15 @@ def set_logger(level: int | str = 20, *, rich_tracebacks=False, **kwargs):
         retention='1 year',
         encoding='UTF-8-SIG',
     )
+
+
+class Progress(progress.Progress):
+    @classmethod
+    def get_default_columns(cls) -> tuple[progress.ProgressColumn, ...]:
+        return (
+            progress.TextColumn('[progress.description]{task.description}'),
+            progress.BarColumn(bar_width=60),
+            progress.MofNCompleteColumn(),
+            progress.TaskProgressColumn(),
+            progress.TimeRemainingColumn(compact=True, elapsed_when_finished=True),
+        )

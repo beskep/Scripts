@@ -1,5 +1,5 @@
-from .console import cnsl, set_logger
+from .console import Progress, cnsl, set_logger
 from .misc import FileSize
 from .notification import WindowsNotifier
 
-__all__ = ['FileSize', 'WindowsNotifier', 'cnsl', 'set_logger']
+__all__ = ['FileSize', 'Progress', 'WindowsNotifier', 'cnsl', 'set_logger']
