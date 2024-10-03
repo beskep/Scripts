@@ -1,3 +1,5 @@
+# ruff: noqa: DOC501
+
 from pathlib import Path
 from typing import Annotated, Literal
 
@@ -32,7 +34,7 @@ def launcher(
         logger.info('Completed {}', tokens[0])
 
 
-@app.command(group='Images')  # type: ignore[misc]
+@app.command(group='Images')
 def resize(  # noqa: PLR0913
     src: Path,
     dst: Path | None = None,
@@ -86,7 +88,7 @@ def resize(  # noqa: PLR0913
     )
 
 
-@app.command(group='Images')  # type: ignore[misc]
+@app.command(group='Images')
 def duplicate(
     src: Path,
     *,
@@ -101,7 +103,7 @@ def duplicate(
     _duplicate(src=src, batch=batch, keep=keep, remove=remove)
 
 
-@app.command(group='Images')  # type: ignore[misc]
+@app.command(group='Images')
 def size(
     path: Path | None = None,
     *,

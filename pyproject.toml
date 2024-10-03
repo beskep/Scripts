@@ -49,6 +49,7 @@ ignore = [
     "D",      # pydocstyle
     "E1",     # pycodestyle: E1*
     "E2",     # pycodestyle: E2*
+    "FIX",    # flake8-fixme
     "ISC001", # flake8-implicit-str-concat: single-line-implicit-string-concatenation
     "PD",     # pandas-vet
     "PTH123", # flake8-use-pathlib: builtin-open
