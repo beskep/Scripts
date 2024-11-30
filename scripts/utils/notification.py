@@ -4,7 +4,7 @@ import codecs
 import subprocess as sp
 import tempfile
 import uuid
-from xml.etree import ElementTree
+from xml.etree import ElementTree as ET
 
 
 class WindowsNotifier:
@@ -40,40 +40,40 @@ $toast = New-Object Windows.UI.Notifications.ToastNotification $xml
         icon: str | None = None,
     ):
         # Create the top <toast> element
-        top = ElementTree.Element('toast')
+        top = ET.Element('toast')
         # set the duration for the top element
         top.set('duration', 'short')
 
         # create the <visual> element
-        visual = ElementTree.SubElement(top, 'visual')
+        visual = ET.SubElement(top, 'visual')
 
         # create <binding> element
-        binding = ElementTree.SubElement(visual, 'binding')
+        binding = ET.SubElement(visual, 'binding')
         # add the required attribute for this.
         # For some reason, go-toast set the template attribute to 'ToastGeneric'
         # but it never worked for me.
         binding.set('template', 'ToastImageAndText02')
 
         # create <image> element
-        image = ElementTree.SubElement(binding, 'image')
+        image = ET.SubElement(binding, 'image')
         # add an Id
         image.set('id', '1')
         # add the src
         image.set('src', icon or '')
 
         # add the message and title
-        title_element = ElementTree.SubElement(binding, 'text')
+        title_element = ET.SubElement(binding, 'text')
         title_element.set('id', '1')
         title_element.text = title
 
-        message_element = ElementTree.SubElement(binding, 'text')
+        message_element = ET.SubElement(binding, 'text')
         message_element.set('id', '2')
         message_element.text = message
 
         # Great we have a generated XML notification.
         # We need to create the rest of the .ps1 file
         # and dump it to the temporary directory
-        template = ElementTree.tostring(top, encoding='UTF-8').decode('UTF-8')
+        template = ET.tostring(top, encoding='UTF-8').decode('UTF-8')
         return cls.PS1.format(app_id=app_id, template=template)
 
     def send(

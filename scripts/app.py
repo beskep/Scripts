@@ -109,7 +109,7 @@ def size(
     path: Path | None = None,
     *,
     viz: Literal['bar', 'gradient'] = 'bar',
-    na: Annotated[bool, Parameter(negative_bool='--drop-')] = False,
+    na: Annotated[bool, Parameter(negative_bool='drop-')] = False,
 ):
     """폴더, 작가별 용량 및 폴더 개수 시각화."""
     _size(path=path, viz=viz, drop_na=not na)
