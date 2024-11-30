@@ -1,6 +1,7 @@
 [project]
 name = "scripts"
 version = "0.3.0"
+requires-python = ">=3.12"
 dependencies = [
     "polars>=1.2.1",
     "pandas>=2.2.2",
@@ -10,26 +11,9 @@ dependencies = [
     "loguru>=0.7.2",
     "cyclopts>=2.9.3",
 ]
-requires-python = ">=3.12"
 
-[build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
-
-[tool.rye]
-managed = true
-dev-dependencies = [
-    "mypy>=1.11.0",
-    "ruff>=0.5.3",
-    "pylint>=3.2.5",
-    "typos>=1.23.2",
-]
-
-[tool.hatch.metadata]
-allow-direct-references = true
-
-[tool.hatch.build.targets.wheel]
-packages = ["scripts"]
+[dependency-groups]
+dev = ["mypy>=1.13.0", "ruff>=0.8.1", "typos>=1.28.1"]
 
 [tool.ruff]
 preview = true
