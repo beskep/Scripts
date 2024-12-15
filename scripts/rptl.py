@@ -54,7 +54,7 @@ class Pattern:
         # e.g.
         #    # character "src"
         #    character "dst"
-        r'(?P<head># (?P<char>[\w_]+) \"(?P<src>.*)\"(\s+)(?P=char) )\"(?P<dst>.*)\"',
+        r'(?P<head># (?P<char>[\w_]*)\s*\"(?P<src>.*)\"(\s+)(?P=char) )\"(?P<dst>.*)\"',
     )
 
     # `script.rpy` 파일에 있는 캐릭터 목록
