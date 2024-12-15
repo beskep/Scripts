@@ -9,7 +9,7 @@ from loguru import logger
 
 from scripts.utils import FileSize
 
-cnsl = rich.get_console()
+console = rich.get_console()
 
 
 def find_wiztree(root: Path | None):
@@ -28,30 +28,42 @@ def _bytes(size):
 
 
 class Expr:
-    MEGABYTE = 'Megabyte'
+    MIB = 'MiB'
     READABLE = 'HumanReadable'
 
     _MEBI = 2**20
 
-    name = pl.col('path').str.extract(r'.*\\(.*)(\\|(\.\w+))').alias('name')
-    author = pl.col('name').str.extract(r'^\[.*\((.*?)\)]').alias('author')
-    megabyte = pl.col('size').truediv(_MEBI).round(2).alias(MEGABYTE)
+    mebibyte = pl.col('size').truediv(_MEBI).round(2).alias(MIB)
     readable = pl.col('size').map_elements(_bytes, return_dtype=pl.Utf8).alias(READABLE)
-
-    dir_or_archive = (
-        pl.col('path').str.extract(r'(([^\]]\\)|(\.((rar)|(zip))))$').is_not_null()
-    )
 
 
 def read_wiztree(path: str | Path):
-    return (
+    # work/book > file/page
+    data = (
         pl.scan_csv(path, skip_rows=1)
         .rename({'파일 이름': 'path', '크기': 'size'})
         .with_columns(pl.col('path').str.len_chars().alias('pl'))
         .filter(pl.col('pl') != pl.col('pl').min())  # filter root dir
-        .filter(Expr.dir_or_archive)
-        .with_columns(Expr.name)
-        .select('name', Expr.author, 'size', Expr.megabyte, Expr.readable)
+        .with_columns(
+            pl.col('path').str.extract_groups(r'.*\\(?<work>.*)\\(?<file>[^\\]*)')
+        )
+        .unnest('path')
+        .with_columns(pl.col('file').replace({'': None}))
+    )
+
+    count = data.filter(pl.col('file').is_not_null()).group_by('work').len('files')
+
+    return (
+        data.filter(pl.col('file').is_null())
+        .join(count, on='work', how='left', validate='1:1')
+        .select(
+            'work',
+            pl.col('work').str.extract(r'^\[.*\((.*?)\)]').alias('author'),
+            'files',
+            'size',
+            Expr.mebibyte,
+            Expr.readable,
+        )
         .sort('size', descending=True)
         .collect()
     )
@@ -92,7 +104,7 @@ class HtmlViz:
                 raise ValueError(msg)
 
         styler = (
-            styler.format({'size': '{:.2e}', Expr.MEGABYTE: '{:.2f}'})
+            styler.format({'size': '{:.2e}', Expr.MIB: '{:.2f}'})
             .set_table_styles([{'selector': 'td, th', 'props': 'padding: 0 10px;'}])
             .set_table_styles(
                 {'size': [{'selector': '', 'props': [('text-align', 'right')]}]},
@@ -128,15 +140,15 @@ def _author_size(df: pl.DataFrame):
     return (
         df.with_columns(pl.col('author').fill_null('NA'))
         .group_by('author')
-        .agg(pl.count('size').alias('count'), pl.sum('size'))
-        .with_columns(Expr.megabyte, Expr.readable)
+        .agg(pl.sum('files'), pl.count('size').alias('count'), pl.sum('size'))
+        .with_columns(Expr.mebibyte, Expr.readable)
         .sort('size', descending=True)
     )
 
 
 @pl.Config(
     set_tbl_hide_column_data_types=True,
-    set_fmt_str_lengths=cnsl.width // 2,
+    set_fmt_str_lengths=console.width // 2,
 )
 def author_size(path: Path | None, *, viz: Viz = 'bar', drop_na=True):
     HtmlViz.VIZ = viz
@@ -150,26 +162,22 @@ def author_size(path: Path | None, *, viz: Viz = 'bar', drop_na=True):
         logger.warning('대상이 WizTree 파일이 아닐 수 있음: "{}"', path)
 
     # 파일 불러오기
-    book = read_wiztree(path)
+    work = read_wiztree(path)
 
     # 개별 파일 크기별로 정리
-    cnsl.print('Files by size:', style='blue bold')
-    cnsl.print(book.drop('size'))
-    HtmlViz.write_df(
-        path=root / 'Comics-Book.html',
-        df=book,
-        subset=Expr.MEGABYTE,
-    )
+    console.print('Files by size:', style='blue bold')
+    console.print(work.drop('size'))
+    HtmlViz.write_df(path=root / 'Comics-Book.html', df=work, subset=Expr.MIB)
 
     # 작가 크기/개수별 정리
     if drop_na:
-        book = book.filter(pl.col('author') != 'N／A')  # noqa: RUF001
+        work = work.filter(pl.col('author') != 'N／A')  # noqa: RUF001
 
-    author = _author_size(book)
-    cnsl.print('\nAuthors by size:', style='blue bold')
-    cnsl.print(author.drop('size'))
+    author = _author_size(work)
+    console.print('\nAuthors by size:', style='blue bold')
+    console.print(author.drop('size'))
     HtmlViz.write_dfs(
         path=root / 'Comics-Author.html',
         df=author,
-        subset=(Expr.MEGABYTE, 'count'),
+        subset=(Expr.MIB, 'files', 'count'),
     )
