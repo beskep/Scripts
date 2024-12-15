@@ -6,7 +6,6 @@ from collections.abc import Collection
 from functools import cached_property
 from itertools import batched, chain
 from pathlib import Path
-from typing import NamedTuple
 
 from loguru import logger
 
@@ -36,7 +35,8 @@ class RpyReader:
             yield ''.join(chain.from_iterable(lines))
 
 
-class TranslationMatch(NamedTuple):
+@dc.dataclass
+class TranslationMatch:
     match: re.Match
     full: str
     head: str
@@ -83,6 +83,7 @@ class Preserve:
 @dc.dataclass
 class Config:
     batch_size: int
+    linebreak_threshold: int
     backup: str | None
     dev_mode: str
     dev_script: str | None
@@ -100,7 +101,8 @@ class Config:
 class RenpyTranslation:
     path: Path
     tl: str = 'game/tl'
-    script: str | None = 'game/script.rpy'
+    script_rpy: str | None = 'game/script.rpy'
+    characters_rpy: str | None = None
     language: str = 'Korean'
 
     pattern: Pattern = dc.field(default_factory=Pattern)
@@ -108,51 +110,73 @@ class RenpyTranslation:
 
     @cached_property
     def characters(self) -> set[str]:
-        if not self.script:
+        if not (rpy := self.characters_rpy or self.script_rpy):
             return set()
 
-        if not (script := self.path / self.script).exists():
-            raise FileNotFoundError(script)
+        if not (path := self.path / rpy).exists():
+            raise FileNotFoundError(path)
 
-        text = script.read_text('UTF-8')
+        text = path.read_text('UTF-8')
         return {m.group(1) for m in re.finditer(self.pattern.character, text)}
 
-    def _replace(
-        self,
-        text: str,
-        match: TranslationMatch,
-        *,
-        preserve: bool,
-    ) -> str | None:
-        _, full, head, src, dst = match
+    def _edit_side_by_side(self, text: str, m: TranslationMatch) -> str | None:
+        """
+        원문, 번역 복수 표기
 
-        if dst.startswith(src) or (src.startswith('old:') and dst.startswith('new:')):
-            return None
+        Parameters
+        ----------
+        text : str
+        m : TranslationMatch
 
-        # 원문 유지
-        if preserve or src.strip().strip('.') in self.conf.preserve.words:
-            return text.replace(full, f'{head}"{src}"')
-
+        Returns
+        -------
+        str | None
+        """
         # 캐릭터 이름
-        if src in self.characters:
-            if re.match(r'^\[.*\]$', src):
+        if m.src in self.characters:
+            if re.match(r'^\[.*\]$', m.src):
                 # "[캐릭터]" -> 원문 유지
-                return text.replace(full, f'{head}"{src}"')
+                return text.replace(m.full, f'{m.head}"{m.src}"')
 
             # 대사창 표기: "원문 (번역)"
-            return text.replace(full, f'{head}"{src} ({dst})"')
+            return text.replace(m.full, f'{m.head}"{m.src} ({m.dst})"')
 
-        src = src.replace('{w}', '').replace('{p}', ' / ')  # 원문 줄바꿈 제거
+        # 짧은 글
+        if len(m.src) <= self.conf.linebreak_threshold:
+            return text.replace(m.full, f'{m.head}"{m.src}  |  {m.dst}"')
 
-        if not dst.startswith(src):
+        src = m.src.replace('{w}', '').replace('{p}', ' / ')  # 원문 줄바꿈 제거
+
+        if not m.dst.startswith(src):
             # 일반 대사: "원문\n번역"
-            return text.replace(full, f'{head}"{src}\\n{dst}"')
+            return text.replace(m.full, f'{m.head}"{src}\\n{m.dst}"')
 
         return None
 
+    def _edit(
+        self,
+        text: str,
+        m: TranslationMatch,
+        *,
+        preserve: bool,
+    ) -> str | None:
+        # TODO dst에서 `%` -> `%%`
+
+        if (
+            m.dst.startswith(m.src)  ##
+            or (m.src.startswith('old:') and m.dst.startswith('new:'))
+        ):
+            return None
+
+        # 원문 유지
+        if preserve or m.src.strip().strip('.') in self.conf.preserve.words:
+            return text.replace(m.full, f'{m.head}"{m.src}"')
+
+        return self._edit_side_by_side(text=text, m=m)
+
     def _rpy(self, text: str, *, preserve: bool):
         for match in self.pattern.iter_tl(text):
-            if t := self._replace(text=text, match=match, preserve=preserve):
+            if t := self._edit(text=text, m=match, preserve=preserve):
                 text = t
 
         return text

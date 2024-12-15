@@ -1,7 +1,8 @@
 [rptl]
 batch_size = 100
+linebreak_threshold = 12
 backup = 'Backup'
-dev_mode = '__dev_mode__'
+dev_mode = 'game/__dev_mode__'
 dev_script = """
 init 9999 python:
     config.developer = True

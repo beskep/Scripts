@@ -152,7 +152,13 @@ def loudnorm(
 
 
 @app.command
-def rptl(path: Path, language: str = 'Korean'):
+def rptl(
+    path: Path,
+    *,
+    script: str = 'game/script.rpy',
+    characters: str | None = None,
+    language: str = 'Korean',
+):
     """
     Renpy 번역 원문·번역어 동시 출력
 
@@ -160,10 +166,20 @@ def rptl(path: Path, language: str = 'Korean'):
     ----------
     path : Path
         게임 경로.
+    script: str
+        `script.rpy` 경로.
+    characters: str | None
+        렌파이 `Character` 정보가 저장된 rpy 경로.
+        미지정 시 `script`에서 캐릭터 정보를 찾음.
     language : str, optional
         번역 대상 언어.
     """
-    RenpyTranslation(path=path, language=language).execute()
+    RenpyTranslation(
+        path=path,
+        script_rpy=script,
+        characters_rpy=characters,
+        language=language,
+    ).execute()
 
 
 @app.command
