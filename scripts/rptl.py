@@ -11,6 +11,8 @@ from loguru import logger
 
 from scripts.utils import Progress
 
+PERCENT = re.compile(r'(?<!%)(%)(?!%)')
+
 
 @dc.dataclass
 class RpyReader:
@@ -42,6 +44,9 @@ class TranslationMatch:
     head: str
     src: str
     dst: str
+
+    def __post_init__(self):
+        self.dst = PERCENT.sub(r'%%', self.dst)
 
 
 @dc.dataclass
@@ -160,8 +165,6 @@ class RenpyTranslation:
         *,
         preserve: bool,
     ) -> str | None:
-        # TODO dst에서 `%` -> `%%`
-
         if (
             m.dst.startswith(m.src)  ##
             or (m.src.startswith('old:') and m.dst.startswith('new:'))
